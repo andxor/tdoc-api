@@ -11,13 +11,13 @@ var util = require('util'),
     async = require('async'),
     docType = 'Test';
 
-function tdoc(address, username, password) {
+function TDoc(address, username, password) {
     this.address = address.replace(/\/?$/, '/'); // check that it includes the trailing slash
     this.username = username;
     this.password = password;
 }
 
-tdoc.prototype.upload = function (file, doctype, period, meta, callback) {
+TDoc.prototype.upload = function (file, doctype, period, meta, callback) {
     fs.stat(file, function(err, stats) {
         if (err)
             return callback(err);
@@ -33,11 +33,11 @@ tdoc.prototype.upload = function (file, doctype, period, meta, callback) {
             }
         }).on('complete', function (data, resp) {
             if (resp.statusCode == 200)
-                callback(null, data)
+                callback(null, data);
             else
                 callback(resp.statusCode);
         });
     });
-}
+};
 
-module.exports = tdoc;
+module.exports = TDoc;
