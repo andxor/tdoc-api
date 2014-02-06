@@ -7,9 +7,7 @@
 
 var util = require('util'),
     fs = require('fs'),
-    restler = require('restler'),
-    async = require('async'),
-    docType = 'Test';
+    restler = require('restler');
 
 function TDoc(address, username, password) {
     this.address = address.replace(/\/?$/, '/'); // check that it includes the trailing slash
