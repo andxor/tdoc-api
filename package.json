@@ -2,15 +2,23 @@
   "name": "tdoc-api",
   "version": "0.0.1",
   "description": "Wrapper around tDoc REST-ful APIs",
-  "main": "app.js",
+  "main": "index.js",
+  "homepage": "https://github.com/andxor/tdoc-api",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/andxor/tdoc-api.git"
+  },
+  "engines": {
+    "node": ">= 0.10.x"
+  },
   "dependencies": {
     "restler": "~3.1.0"
   },
   "devDependencies": {},
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node test.js"
   },
-  "repository": "https://github.com/andxor/tdoc-api",
+  "bugs": "https://github.com/andxor/tdoc-api/issues",
   "author": "Lapo Luchini <l.luchini@andxor.it>",
-  "license": "BSD"
+  "license": "ISC"
 }
