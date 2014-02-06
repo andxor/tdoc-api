@@ -16,13 +16,14 @@ function TDoc(address, username, password) {
 }
 
 TDoc.prototype.upload = function (file, doctype, period, meta, callback) {
+    var me = this;
     fs.stat(file, function(err, stats) {
         if (err)
             return callback(err);
-        restler.post(this.address + 'docs/upload', {
+        restler.post(me.address + 'docs/upload', {
             multipart: true,
-            username: this.username,
-            password: this.password,
+            username: me.username,
+            password: me.password,
             data: {
                 doctype: doctype,
                 period: period,
