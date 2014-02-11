@@ -34,7 +34,7 @@ TDoc.prototype.upload = function (file, doctype, period, meta, callback) {
             if (resp.statusCode == 200)
                 callback(null, data);
             else
-                callback(resp.statusCode);
+                callback('message' in data ? data.message : 'error ' + resp.statusCode);
         });
     });
 };
