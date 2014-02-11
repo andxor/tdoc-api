@@ -15,6 +15,10 @@ function TDoc(address, username, password) {
     this.password = password;
 }
 
+function forceNumber(n) {
+    return +n;
+}
+
 TDoc.prototype.upload = function (file, doctype, period, meta, callback) {
     var me = this;
     fs.stat(file, function(err, stats) {
@@ -26,7 +30,7 @@ TDoc.prototype.upload = function (file, doctype, period, meta, callback) {
             password: me.password,
             data: {
                 doctype: doctype,
-                period: period,
+                period: forceNumber(period),
                 document: restler.file(file, null, stats.size, null, 'application/pdf'),
                 meta: JSON.stringify(meta)
             }
@@ -36,6 +40,29 @@ TDoc.prototype.upload = function (file, doctype, period, meta, callback) {
             else
                 callback('message' in data ? data.message : 'error ' + resp.statusCode);
         });
+    });
+};
+
+TDoc.prototype.search = function (doctype, period, meta, callback) {
+    var me = this,
+        data = {
+            doctype: doctype,
+            meta: JSON.stringify(meta)
+        };
+    if (period) data.period = forceNumber(period);
+    restler.post(me.address + 'docs/search', {
+        multipart: true,
+        username: me.username,
+        password: me.password,
+        data: data
+    }).on('complete', function (data, resp) {
+        if (resp.statusCode != 200)
+            return callback('message' in data ? data.message : 'error ' + resp.statusCode);
+        // massage data
+        var d = [];
+        if ('documents' in data)
+            d = data.documents.map(forceNumber);
+        callback(null, d);
     });
 };
 
