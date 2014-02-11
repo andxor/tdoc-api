@@ -15,6 +15,14 @@ function TDoc(address, username, password) {
     this.password = password;
 }
 
+function getError(data, resp) {
+    if (resp.statusCode == 200)
+        return null;
+    if (typeof data == 'object' && 'message' in data)
+        return data.message;
+    return 'error ' + resp.statusCode;
+}
+
 function forceNumber(n) {
     return +n;
 }
@@ -35,10 +43,8 @@ TDoc.prototype.upload = function (file, doctype, period, meta, callback) {
                 meta: JSON.stringify(meta)
             }
         }).on('complete', function (data, resp) {
-            if (resp.statusCode == 200)
-                callback(null, data);
-            else
-                callback('message' in data ? data.message : 'error ' + resp.statusCode);
+            var err = getError(data, resp);
+            callback(err, data);
         });
     });
 };
@@ -56,13 +62,11 @@ TDoc.prototype.search = function (doctype, period, meta, callback) {
         password: me.password,
         data: data
     }).on('complete', function (data, resp) {
-        if (resp.statusCode != 200)
-            return callback('message' in data ? data.message : 'error ' + resp.statusCode);
-        // massage data
-        var d = [];
-        if ('documents' in data)
+        var err = getError(data, resp),
+            d = [];
+        if (!err && typeof data == 'object' && 'documents' in data)
             d = data.documents.map(forceNumber);
-        callback(null, d);
+        callback(err, d);
     });
 };
 
