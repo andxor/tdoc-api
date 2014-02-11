@@ -57,7 +57,6 @@ TDoc.prototype.search = function (doctype, period, meta, callback) {
         };
     if (period) data.period = forceNumber(period);
     restler.post(me.address + 'docs/search', {
-        multipart: true,
         username: me.username,
         password: me.password,
         data: data
