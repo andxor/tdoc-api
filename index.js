@@ -16,6 +16,8 @@ function TDoc(address, username, password) {
 }
 
 function getError(data, resp) {
+    if (data instanceof Error)
+        return data.message;
     if (resp.statusCode == 200)
         return null;
     if (typeof data == 'object' && 'message' in data)
