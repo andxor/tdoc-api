@@ -29,26 +29,70 @@ function forceNumber(n) {
     return +n;
 }
 
-TDoc.prototype.upload = function (file, doctype, period, meta, callback) {
-    var me = this;
-    fs.stat(file, function(err, stats) {
-        if (err)
-            return callback(err);
-        restler.post(me.address + 'docs/upload', {
-            multipart: true,
-            username: me.username,
-            password: me.password,
-            data: {
-                doctype: doctype,
-                period: forceNumber(period),
-                document: restler.file(file, null, stats.size, null, 'application/pdf'),
-                meta: JSON.stringify(meta)
-            }
-        }).on('complete', function (data, resp) {
-            var err = getError(data, resp);
-            callback(err, data);
-        });
+function nameValue2Object(arr) {
+    var o = {};
+    arr.forEach(function (e) {
+        o[e.name] = e.value;
     });
+    return o;
+}
+
+function documentPOST(me, method, data, callback) {
+    restler.post(me.address + method, {
+        multipart: true,
+        username: me.username,
+        password: me.password,
+        data: data
+    }).on('complete', function (data, resp) {
+        var err = getError(data, resp);
+        if (!err && typeof data == 'object' && 'document' in data) {
+            data = data.document;
+            data.metadata = nameValue2Object(data.metadata);
+        }
+        callback(err, data);
+    });
+};
+
+function commonUploadParams(p) {
+    var s = {};
+    s.doctype = p.doctype;
+    s.mimetype = p.mimetype || 'application/pdf';
+    if (p.period)
+        s.period = forceNumber(p.period);
+    if (p.pages)
+        s.pages = forceNumber(p.pages);
+    if (p.meta)
+        s.meta = JSON.stringify(p.meta);
+    if (p.alias && p.pin) {
+        s.alias = p.alias;
+        s.pin = p.pin;
+    }
+    return s;
+}
+
+TDoc.prototype.upload = function (p) {
+    if (arguments.length == 5) // backward compatibility
+        p = { ready: 1, file: arguments[0], doctype: arguments[1], period: arguments[2], meta: arguments[3], callback: arguments[4] };
+    if (!p.period)
+        throw new Error('you need to specify ‘period’');
+    if (!p.meta && p.ready)
+        throw new Error('if the document is ‘ready’ it must contain ‘meta’');
+    var me = this,
+        s = commonUploadParams(p);
+    if (p.file)
+        fs.stat(p.file, function(err, stats) {
+            if (err)
+                return p.callback(err);
+            s.document = restler.file(p.file, null, stats.size, null, s.mimetype);
+            documentPOST(me, 'docs/upload', s, p.callback);
+        });
+    else if (p.data) {
+        s.document = restler.data('a.bin', s.mimetype, p.data);
+        documentPOST(me, 'docs/upload', s, p.callback);
+    } else if (!p.ready)
+        documentPOST(me, 'docs/upload', s, p.callback);
+    else
+        throw new Error('if the document is ‘ready’ it must have a content as either ‘file’ or ‘data’');
 };
 
 TDoc.prototype.search = function (doctype, period, meta, callback) {
