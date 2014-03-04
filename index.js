@@ -79,6 +79,8 @@ TDoc.prototype.upload = function (p) {
         throw new Error('if the document is ‘ready’ it must contain ‘meta’');
     var me = this,
         s = commonUploadParams(p);
+    if (p.overwrite)
+        s.overwrite = 0|p.overwrite;
     if (p.file)
         fs.stat(p.file, function(err, stats) {
             if (err)
