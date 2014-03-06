@@ -67,6 +67,10 @@ function commonUploadParams(p) {
         s.alias = p.alias;
         s.pin = p.pin;
     }
+    if (p.overwrite) // upload only
+        s.overwrite = 0|p.overwrite;
+    if (p.id) // update only
+        s.id = 0|p.id;
     return s;
 }
 
@@ -79,8 +83,6 @@ TDoc.prototype.upload = function (p) {
         return p.callback(new Error('if the document is ‘ready’ it must contain ‘meta’'));
     var me = this,
         s = commonUploadParams(p);
-    if (p.overwrite)
-        s.overwrite = 0|p.overwrite;
     if (p.file)
         fs.stat(p.file, function(err, stats) {
             if (err)
@@ -95,6 +97,23 @@ TDoc.prototype.upload = function (p) {
         documentPOST(me, 'docs/upload', s, p.callback);
     else
         return p.callback(new Error('if the document is ‘ready’ it must have a content as either ‘file’ or ‘data’'));
+};
+
+TDoc.prototype.update = function (p) {
+    var me = this,
+        s = commonUploadParams(p);
+    if (p.file)
+        fs.stat(p.file, function(err, stats) {
+            if (err)
+                return p.callback(err);
+            s.document = restler.file(p.file, null, stats.size, null, s.mimetype);
+            documentPOST(me, 'docs/update', s, p.callback);
+        });
+    else if (p.data) {
+        s.document = restler.data('a.bin', s.mimetype, p.data);
+        documentPOST(me, 'docs/update', s, p.callback);
+    } else
+        documentPOST(me, 'docs/update', s, p.callback);
 };
 
 TDoc.prototype.search = function (doctype, period, meta, callback) {
