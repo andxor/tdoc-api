@@ -128,4 +128,15 @@ TDoc.prototype.documentMeta = function (id, callback) {
     });
 };
 
+TDoc.prototype.searchOne = function (doctype, period, meta, callback) {
+    var me = this;
+    this.search(doctype, period, meta, function (err, data) {
+        if (err)
+            return callback(err, data);
+        if (data.length != 1)
+            return callback(new Error('One (and only one) document should be found, not ' + data.length));
+        me.documentMeta(data[0], callback);
+    });
+};
+
 module.exports = TDoc;
