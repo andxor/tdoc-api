@@ -117,4 +117,15 @@ TDoc.prototype.search = function (doctype, period, meta, callback) {
     });
 };
 
+TDoc.prototype.documentMeta = function (id, callback) {
+    var me = this;
+    restler.get(me.address + 'docs/' + (0|id) + '/meta', {
+        username: me.username,
+        password: me.password
+    }).on('complete', function (data, resp) {
+        var err = getError(data, resp);
+        callback(err, data);
+    });
+};
+
 module.exports = TDoc;
