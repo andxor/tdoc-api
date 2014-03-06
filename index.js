@@ -17,12 +17,12 @@ function TDoc(address, username, password) {
 
 function getError(data, resp) {
     if (data instanceof Error)
-        return data.message;
+        return data;
     if (resp.statusCode == 200)
         return null;
     if (typeof data == 'object' && 'message' in data)
-        return data.message;
-    return 'error ' + resp.statusCode;
+        return new Error(data.message);
+    return new Error('error ' + resp.statusCode);
 }
 
 function forceNumber(n) {
@@ -74,9 +74,9 @@ TDoc.prototype.upload = function (p) {
     if (arguments.length == 5) // backward compatibility
         p = { ready: 1, file: arguments[0], doctype: arguments[1], period: arguments[2], meta: arguments[3], callback: arguments[4] };
     if (!p.period)
-        throw new Error('you need to specify ‘period’');
+        return p.callback(throw new Error('you need to specify ‘period’'));
     if (!p.meta && p.ready)
-        throw new Error('if the document is ‘ready’ it must contain ‘meta’');
+        return p.callback(throw new Error('if the document is ‘ready’ it must contain ‘meta’'));
     var me = this,
         s = commonUploadParams(p);
     if (p.overwrite)
@@ -94,7 +94,7 @@ TDoc.prototype.upload = function (p) {
     } else if (!p.ready)
         documentPOST(me, 'docs/upload', s, p.callback);
     else
-        throw new Error('if the document is ‘ready’ it must have a content as either ‘file’ or ‘data’');
+        return p.callback(new Error('if the document is ‘ready’ it must have a content as either ‘file’ or ‘data’'));
 };
 
 TDoc.prototype.search = function (doctype, period, meta, callback) {
