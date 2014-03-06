@@ -74,9 +74,9 @@ TDoc.prototype.upload = function (p) {
     if (arguments.length == 5) // backward compatibility
         p = { ready: 1, file: arguments[0], doctype: arguments[1], period: arguments[2], meta: arguments[3], callback: arguments[4] };
     if (!p.period)
-        return p.callback(throw new Error('you need to specify ‘period’'));
+        return p.callback(new Error('you need to specify ‘period’'));
     if (!p.meta && p.ready)
-        return p.callback(throw new Error('if the document is ‘ready’ it must contain ‘meta’'));
+        return p.callback(new Error('if the document is ‘ready’ it must contain ‘meta’'));
     var me = this,
         s = commonUploadParams(p);
     if (p.overwrite)
