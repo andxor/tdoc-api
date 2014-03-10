@@ -71,7 +71,7 @@ function commonUploadParams(p) {
         s.overwrite = 0|p.overwrite;
     if (p.id) // update only
         s.id = 0|p.id;
-    if (p.ready)
+    if ('ready' in p) // as missing value is truthy
         s.ready = p.ready ? 1 : 0;
     return s;
 }
