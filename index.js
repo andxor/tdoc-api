@@ -71,6 +71,8 @@ function commonUploadParams(p) {
         s.overwrite = 0|p.overwrite;
     if (p.id) // update only
         s.id = 0|p.id;
+    if (p.ready)
+        s.ready = p.ready ? 1 : 0;
     return s;
 }
 
@@ -153,7 +155,7 @@ TDoc.prototype.searchOne = function (doctype, period, meta, callback) {
         if (err)
             return callback(err, data);
         if (data.length != 1)
-            return callback(new Error('One (and only one) document should be found, not ' + data.length));
+            return callback(new Error('One document should be found, not ' + data.length));
         me.documentMeta(data[0], callback);
     });
 };
