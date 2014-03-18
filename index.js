@@ -9,6 +9,15 @@ var util = require('util'),
     fs = require('fs'),
     restler = require('restler');
 
+function TDocError(code, message) {
+    // as seen in: http://stackoverflow.com/a/8460753/166524
+    this.constructor.prototype.__proto__ = Error.prototype;
+    Error.captureStackTrace(this, this.constructor);
+    this.name = this.constructor.name;
+    this.code = 0|code;
+    this.message = message;
+}
+
 function TDoc(address, username, password) {
     this.address = address.replace(/\/?$/, '/'); // check that it includes the trailing slash
     this.username = username;
@@ -21,7 +30,7 @@ function getError(data, resp) {
     if (resp.statusCode == 200)
         return null;
     if (typeof data == 'object' && 'message' in data)
-        return new Error(data.message);
+        return new TDocError(data.code, data.message);
     return new Error('error ' + resp.statusCode);
 }
 
@@ -46,6 +55,8 @@ function documentPOST(me, method, data, callback) {
     }).on('complete', function (data, resp) {
         var err = getError(data, resp);
         if (!err && typeof data == 'object' && 'document' in data) {
+            if ('warning' in data)
+                data.document.warning = { message: data.warning.shift(), extra: data.warning };
             data = data.document;
             data.metadata = nameValue2Object(data.metadata);
         }
