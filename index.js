@@ -70,6 +70,8 @@ function commonUploadParams(p) {
     s.mimetype = p.mimetype || 'application/pdf';
     if (p.user)
         s.user = p.user;
+    if (p.company)
+        s.company = p.company;
     if (p.period)
         s.period = forceNumber(p.period);
     if (p.pages)
