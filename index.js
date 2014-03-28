@@ -74,6 +74,8 @@ function commonUploadParams(p) {
         s.company = p.company;
     if (p.period)
         s.period = forceNumber(p.period);
+    if (p.parcel) // upload only
+        s.parcel = p.parcel;
     if (p.pages)
         s.pages = forceNumber(p.pages);
     if (p.meta)
@@ -172,6 +174,62 @@ TDoc.prototype.searchOne = function (doctype, period, meta, callback) {
         if (data.length != 1)
             return callback(new Error('One document should be found, not ' + data.length));
         me.documentMeta(data[0], callback);
+    });
+};
+
+TDoc.prototype.parcelCreate = function (company, doctype, filename, callback) {
+    var me = this,
+        data = {
+            company: company,
+            doctype: doctype,
+            filename: filename
+        };
+    restler.post(me.address + 'docs/parcel/create', {
+        username: me.username,
+        password: me.password,
+        data: data
+    }).on('complete', function (data, resp) {
+        var err = getError(data, resp),
+            d = [];
+        if (!err && typeof data == 'object' && 'parcel' in data)
+            d = data.parcel;
+        callback(err, d);
+    });
+};
+
+TDoc.prototype.parcelClose = function (id, callback) {
+    var me = this,
+        data = {
+            parcel: id
+        };
+    restler.post(me.address + 'docs/parcel/close', {
+        username: me.username,
+        password: me.password,
+        data: data
+    }).on('complete', function (data, resp) {
+        var err = getError(data, resp),
+            d = [];
+        if (!err && typeof data == 'object' && 'parcel' in data)
+            d = data.parcel;
+        callback(err, d);
+    });
+};
+
+TDoc.prototype.parcelDelete = function (id, callback) {
+    var me = this,
+        data = {
+            parcel: id
+        };
+    restler.post(me.address + 'docs/parcel/delete', {
+        username: me.username,
+        password: me.password,
+        data: data
+    }).on('complete', function (data, resp) {
+        var err = getError(data, resp),
+            d = [];
+        if (!err && typeof data == 'object' && 'parcel' in data)
+            d = data.parcel;
+        callback(err, d);
     });
 };
 
