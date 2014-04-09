@@ -1,6 +1,6 @@
 {
   "name": "tdoc-api",
-  "version": "0.0.17",
+  "version": "0.0.18",
   "description": "Wrapper around tDoc REST-ful APIs",
   "main": "index.js",
   "homepage": "https://github.com/andxor/tdoc-api",
@@ -12,6 +12,7 @@
     "node": ">= 0.10.x"
   },
   "dependencies": {
+    "request": "^2.34.0",
     "restler": "lapo-luchini/restler"
   },
   "devDependencies": {},

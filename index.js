@@ -9,28 +9,29 @@ var util = require('util'),
     fs = require('fs'),
     restler = require('restler');
 
-function TDocError(code, message) {
-    // as seen in: http://stackoverflow.com/a/8460753/166524
-    this.constructor.prototype.__proto__ = Error.prototype;
-    Error.captureStackTrace(this, this.constructor);
-    this.name = this.constructor.name;
-    this.code = 0|code;
-    this.message = message;
-}
-
 function TDoc(address, username, password) {
     this.address = address.replace(/\/?$/, '/'); // check that it includes the trailing slash
     this.username = username;
     this.password = password;
 }
 
-function getError(data, resp) {
+TDoc.Error = function (method, code, message) {
+    // as seen in: http://stackoverflow.com/a/8460753/166524
+    this.constructor.prototype.__proto__ = Error.prototype;
+    Error.captureStackTrace(this, this.constructor);
+    this.name = this.constructor.name;
+    this.method = method;
+    this.code = 0|code;
+    this.message = message;
+};
+
+function getError(method, data, resp) {
     if (data instanceof Error)
         return data;
     if (resp.statusCode == 200)
         return null;
     if (typeof data == 'object' && 'message' in data)
-        return new TDocError(data.code, data.message);
+        return new TDoc.Error(method, data.code, data.message);
     return new Error('error ' + resp.statusCode);
 }
 
@@ -53,7 +54,7 @@ function documentPOST(me, method, data, callback) {
         password: me.password,
         data: data
     }).on('complete', function (data, resp) {
-        var err = getError(data, resp);
+        var err = getError(method, data, resp);
         if (!err && typeof data == 'object' && 'document' in data) {
             if ('warning' in data)
                 data.document.warning = { message: data.warning.shift(), extra: data.warning };
@@ -62,7 +63,7 @@ function documentPOST(me, method, data, callback) {
         }
         callback(err, data);
     });
-};
+}
 
 function commonUploadParams(p) {
     var s = {};
@@ -93,7 +94,7 @@ function commonUploadParams(p) {
 }
 
 TDoc.prototype.upload = function (p) {
-    if (arguments.length == 5) // backward compatibility
+    if (arguments.length > 1) // backward compatibility
         p = { ready: 1, file: arguments[0], doctype: arguments[1], period: arguments[2], meta: arguments[3], callback: arguments[4] };
     if (!p.doctype)
         return p.callback(new Error('you need to specify ‘doctype’'));
@@ -137,101 +138,127 @@ TDoc.prototype.update = function (p) {
         documentPOST(me, 'docs/update', s, p.callback);
 };
 
-TDoc.prototype.search = function (doctype, period, meta, callback) {
+TDoc.prototype.search = function (p) {
+    if (arguments.length > 1) // backward compatibility
+        p = { doctype: arguments[0], period: arguments[1], meta: arguments[2], callback: arguments[3] };
     var me = this,
         data = {
-            doctype: doctype,
-            meta: JSON.stringify(meta)
+            doctype: p.doctype,
+            meta: JSON.stringify(p.meta)
         };
-    if (period) data.period = forceNumber(period);
+    if (p.user) data.user = p.user;
+    if (p.period) data.period = forceNumber(p.period);
     restler.post(me.address + 'docs/search', {
         username: me.username,
         password: me.password,
         data: data
     }).on('complete', function (data, resp) {
-        var err = getError(data, resp),
+        var err = getError('search', data, resp),
             d = [];
         if (!err && typeof data == 'object' && 'documents' in data)
             d = data.documents.map(forceNumber);
-        callback(err, d);
+        p.callback(err, d);
     });
 };
 
-TDoc.prototype.documentMeta = function (id, callback) {
-    var me = this;
-    restler.get(me.address + 'docs/' + (0|id) + '/meta', {
+TDoc.prototype.documentMeta = function (p) {
+    if (arguments.length > 1) // backward compatibility
+        p = { id: arguments[0], callback: arguments[1] };
+    var me = this,
+        data = {};
+    if (p.user) data.user = p.user;
+    restler.get(me.address + 'docs/' + (0|p.id) + '/meta', {
         username: me.username,
-        password: me.password
+        password: me.password,
+        query: data
     }).on('complete', function (data, resp) {
-        var err = getError(data, resp);
-        callback(err, data);
+        var err = getError('documentMeta', data, resp);
+        p.callback(err, data);
     });
 };
 
-TDoc.prototype.searchOne = function (doctype, period, meta, callback) {
-    var me = this;
-    this.search(doctype, period, meta, function (err, data) {
+TDoc.prototype.searchOne = function (p) {
+    if (arguments.length > 1) // backward compatibility
+        p = { doctype: arguments[0], period: arguments[1], meta: arguments[2], callback: arguments[3] };
+    var me = this,
+        p2 = Object.create(p); // search has the same parameters of searchOne, we just change the callback
+    p2.callback = function (err, data) {
         if (err)
-            return callback(err, data);
+            return p.callback(err, data);
         if (data.length != 1)
-            return callback(new Error('One document should be found, not ' + data.length));
-        me.documentMeta(data[0], callback);
-    });
+            return p.callback(new Error('One document should be found, not ' + data.length));
+        var p3 = {
+            id: data[0],
+            callback: p.callback
+        };
+        if (p.user) p3.user = p.user;
+        me.documentMeta(p3);
+    };
+    this.search(p2);
 };
 
-TDoc.prototype.parcelCreate = function (company, doctype, filename, callback) {
+TDoc.prototype.parcelCreate = function (p) {
+    if (arguments.length > 1) // backward compatibility
+        p = { company: arguments[0], doctype: arguments[1], filename: arguments[2], callback: arguments[3] };
     var me = this,
         data = {
-            company: company,
-            doctype: doctype,
-            filename: filename
+            company: p.company,
+            doctype: p.doctype,
+            filename: p.filename
         };
+    if (p.user) data.user = p.user;
     restler.post(me.address + 'docs/parcel/create', {
         username: me.username,
         password: me.password,
         data: data
     }).on('complete', function (data, resp) {
-        var err = getError(data, resp),
+        var err = getError('parcelCreate', data, resp),
             d = [];
         if (!err && typeof data == 'object' && 'parcel' in data)
             d = data.parcel;
-        callback(err, d);
+        p.callback(err, d);
     });
 };
 
-TDoc.prototype.parcelClose = function (id, callback) {
+TDoc.prototype.parcelClose = function (p) {
+    if (arguments.length > 1) // backward compatibility
+        p = { id: arguments[0], callback: arguments[1] };
     var me = this,
         data = {
-            parcel: id
+            parcel: p.id
         };
+    if (p.user) data.user = p.user;
     restler.post(me.address + 'docs/parcel/close', {
         username: me.username,
         password: me.password,
         data: data
     }).on('complete', function (data, resp) {
-        var err = getError(data, resp),
+        var err = getError('parcelClose', data, resp),
             d = [];
         if (!err && typeof data == 'object' && 'parcel' in data)
             d = data.parcel;
-        callback(err, d);
+        p.callback(err, d);
     });
 };
 
-TDoc.prototype.parcelDelete = function (id, callback) {
+TDoc.prototype.parcelDelete = function (p) {
+    if (arguments.length > 1) // backward compatibility
+        p = { id: arguments[0], callback: arguments[1] };
     var me = this,
         data = {
-            parcel: id
+            parcel: p.id
         };
+    if (p.user) data.user = p.user;
     restler.post(me.address + 'docs/parcel/delete', {
         username: me.username,
         password: me.password,
         data: data
     }).on('complete', function (data, resp) {
-        var err = getError(data, resp),
+        var err = getError('parcelDeelte', data, resp),
             d = [];
         if (!err && typeof data == 'object' && 'parcel' in data)
             d = data.parcel;
-        callback(err, d);
+        p.callback(err, d);
     });
 };
 
