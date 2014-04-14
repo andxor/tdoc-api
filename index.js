@@ -147,6 +147,7 @@ TDoc.prototype.search = function (p) {
             meta: JSON.stringify(p.meta)
         };
     if (p.user) data.user = p.user;
+    if (p.company) data.user = p.company;
     if (p.period) data.period = forceNumber(p.period);
     restler.post(me.address + 'docs/search', {
         username: me.username,
@@ -167,6 +168,7 @@ TDoc.prototype.documentMeta = function (p) {
     var me = this,
         data = {};
     if (p.user) data.user = p.user;
+    if (p.company) data.user = p.company;
     restler.get(me.address + 'docs/' + (0|p.id) + '/meta', {
         username: me.username,
         password: me.password,

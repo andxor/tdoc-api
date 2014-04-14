@@ -27,7 +27,7 @@ __Arguments__
 * document content (optional if `ready` is false), either:
   * `file`: path of the file to be uploaded
   * `data`: a `Buffer` or `binary` string with raw data
-* `mimetype`: the content media type (default to `application/pdf`)
+* `mimetype`: the content media type (defaults to `application/pdf`)
 * `doctype`: docType to upload the document into
 * `period`: fiscal period the document refers to; use current year for documents that don't have such concept
 * `meta`: all the metadata to associate to the document (optional if `ready` is false)
