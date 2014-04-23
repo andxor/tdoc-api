@@ -12,7 +12,7 @@
     "node": ">= 0.10.x"
   },
   "dependencies": {
-    "restler": "lapo-luchini/restler"
+    "restler": "andxor/restler"
   },
   "devDependencies": {},
   "scripts": {
