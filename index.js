@@ -7,7 +7,9 @@
 
 var util = require('util'),
     fs = require('fs'),
-    restler = require('restler');
+    Q = require('q'),
+    restler = require('./lib/restler-q'),
+    qStat = Q.denodeify(fs.stat);
 
 function TDoc(address, username, password) {
     this.address = address.replace(/\/?$/, '/'); // check that it includes the trailing slash
@@ -16,24 +18,14 @@ function TDoc(address, username, password) {
 }
 
 TDoc.Error = function (method, code, message) {
-    // as seen in: http://stackoverflow.com/a/8460753/166524
-    this.constructor.prototype.__proto__ = Error.prototype;
-    Error.captureStackTrace(this, this.constructor);
+    // inspired by: http://stackoverflow.com/a/8460753/166524
     this.name = this.constructor.name;
     this.method = method;
     this.code = 0|code;
     this.message = message;
 };
-
-function getError(method, data, resp) {
-    if (data instanceof Error)
-        return data;
-    if (resp.statusCode == 200)
-        return null;
-    if (typeof data == 'object' && 'message' in data)
-        return new TDoc.Error(method, data.code, data.message);
-    return new Error('error ' + resp.statusCode);
-}
+TDoc.Error.prototype = Object.create(Error.prototype);
+TDoc.Error.prototype.constructor = TDoc.Error;
 
 function forceNumber(n) {
     return +n;
@@ -47,21 +39,55 @@ function nameValue2Object(arr) {
     return o;
 }
 
-function documentPOST(me, method, data, callback) {
-    restler.post(me.address + method, {
+function GET(me, method, data) {
+    return restler.get(me.address + method, {
+        username: me.username,
+        password: me.password,
+        query: data
+    }).then(function (data) {
+        if (typeof data == 'object' && 'message' in data)
+            throw new TDoc.Error(method, data.code, data.message);
+        return data;
+    });
+}
+
+function POST(me, method, data) {
+    return restler.post(me.address + method, {
+        username: me.username,
+        password: me.password,
+        data: data
+    }).then(function (data) {
+        if (typeof data == 'object' && 'message' in data)
+            throw new TDoc.Error(method, data.code, data.message);
+        return data;
+    });
+}
+
+function documentPOST(me, method, data) {
+    return restler.post(me.address + method, {
         multipart: true,
         username: me.username,
         password: me.password,
         data: data
-    }).on('complete', function (data, resp) {
-        var err = getError(method, data, resp);
-        if (!err && typeof data == 'object' && 'document' in data) {
+    }).then(function (data) {
+        if (typeof data == 'object' && 'message' in data)
+            throw new TDoc.Error(method, data.code, data.message);
+        if (typeof data == 'object' && 'document' in data) {
             if ('warning' in data)
                 data.document.warning = { message: data.warning.shift(), extra: data.warning };
             data = data.document;
             data.metadata = nameValue2Object(data.metadata);
+            return data;
         }
-        callback(err, data);
+        throw new Error('Unexpected return value: ' + JSON.stringify(data));
+    });
+}
+
+function parcelPOST(me, method, data) {
+    return POST(me, method, data).then(function (data) {
+        if (typeof data == 'object' && 'parcel' in data)
+            return data.parcel;
+        throw new Error('Unexpected return value: ' + JSON.stringify(data));
     });
 }
 
@@ -93,175 +119,149 @@ function commonUploadParams(p) {
     return s;
 }
 
-TDoc.prototype.upload = function (p) {
-    if (arguments.length > 1) // backward compatibility
-        p = { ready: 1, file: arguments[0], doctype: arguments[1], period: arguments[2], meta: arguments[3], callback: arguments[4] };
+function upload(me, p) {
     if (!p.doctype)
-        return p.callback(new Error('you need to specify ‘doctype’'));
+        return Q.reject(new Error('you need to specify ‘doctype’'));
     if (!p.period)
-        return p.callback(new Error('you need to specify ‘period’'));
+        return Q.reject(new Error('you need to specify ‘period’'));
     if (!p.meta && p.ready)
-        return p.callback(new Error('if the document is ‘ready’ it must contain ‘meta’'));
-    var me = this,
-        s = commonUploadParams(p);
+        return Q.reject(new Error('if the document is ‘ready’ it must contain ‘meta’'));
+    var s = commonUploadParams(p);
     s.doctype = p.doctype;
     if (p.file)
-        fs.stat(p.file, function(err, stats) {
-            if (err)
-                return p.callback(err);
-            s.document = restler.file(p.file, null, stats.size, null, s.mimetype);
-            documentPOST(me, 'docs/upload', s, p.callback);
-        });
+        return qStat(p.file)
+            .then(function (stat) {
+                s.document = restler.file(p.file, null, stat.size, null, s.mimetype);
+                return documentPOST(me, 'docs/upload', s);
+            });
     else if (p.data) {
         s.document = restler.data('a.bin', s.mimetype, p.data);
-        documentPOST(me, 'docs/upload', s, p.callback);
+        return documentPOST(me, 'docs/upload', s);
     } else if (!p.ready)
-        documentPOST(me, 'docs/upload', s, p.callback);
+        return documentPOST(me, 'docs/upload', s);
     else
-        return p.callback(new Error('if the document is ‘ready’ it must have a content as either ‘file’ or ‘data’'));
-};
+        return Q.reject(new Error('if the document is ‘ready’ it must have a content as either ‘file’ or ‘data’'));
+}
 
-TDoc.prototype.update = function (p) {
-    var me = this,
-        s = commonUploadParams(p);
+function update(me, p) {
+    var s = commonUploadParams(p);
     if (p.file)
-        fs.stat(p.file, function(err, stats) {
-            if (err)
-                return p.callback(err);
-            s.document = restler.file(p.file, null, stats.size, null, s.mimetype);
-            documentPOST(me, 'docs/update', s, p.callback);
-        });
+        return qStat(p.file)
+            .then(function (stat) {
+                s.document = restler.file(p.file, null, stats.size, null, s.mimetype);
+                return documentPOST(me, 'docs/update', s);
+            });
     else if (p.data) {
         s.document = restler.data('a.bin', s.mimetype, p.data);
-        documentPOST(me, 'docs/update', s, p.callback);
+        return documentPOST(me, 'docs/update', s);
     } else
-        documentPOST(me, 'docs/update', s, p.callback);
-};
+        return documentPOST(me, 'docs/update', s);
+}
 
-TDoc.prototype.search = function (p) {
-    if (arguments.length > 1) // backward compatibility
-        p = { doctype: arguments[0], period: arguments[1], meta: arguments[2], callback: arguments[3] };
-    var me = this,
-        data = {
+function search(me, p) {
+    var data = {
             doctype: p.doctype,
             meta: JSON.stringify(p.meta)
         };
     if (p.user) data.user = p.user;
     if (p.company) data.company = p.company;
     if (p.period) data.period = forceNumber(p.period);
-    restler.post(me.address + 'docs/search', {
-        username: me.username,
-        password: me.password,
-        data: data
-    }).on('complete', function (data, resp) {
-        var err = getError('search', data, resp),
-            d = [];
+    return POST(me, 'docs/search', data).then(function (data) {
+        var d = [];
         if (!err && typeof data == 'object' && 'documents' in data)
             d = data.documents.map(forceNumber);
-        p.callback(err, d);
+        return d;
     });
-};
+}
 
-TDoc.prototype.documentMeta = function (p) {
-    if (arguments.length > 1) // backward compatibility
-        p = { id: arguments[0], callback: arguments[1] };
-    var me = this,
-        data = {};
+function documentMeta(me, p) {
+    var data = {};
     if (p.user) data.user = p.user;
     if (p.company) data.company = p.company;
-    restler.get(me.address + 'docs/' + (0|p.id) + '/meta', {
-        username: me.username,
-        password: me.password,
-        query: data
-    }).on('complete', function (data, resp) {
-        var err = getError('documentMeta', data, resp);
-        p.callback(err, data);
-    });
-};
+    return GET(me, 'docs/' + (0|p.id) + '/meta', data);
+}
 
-TDoc.prototype.searchOne = function (p) {
-    if (arguments.length > 1) // backward compatibility
-        p = { doctype: arguments[0], period: arguments[1], meta: arguments[2], callback: arguments[3] };
-    var me = this,
-        p2 = Object.create(p); // search has the same parameters of searchOne, we just change the callback
-    p2.callback = function (err, data) {
-        if (err)
-            return p.callback(err, data);
+function searchOne(me, p) {
+    return search(me, p2).then(function (data) {
         if (data.length != 1)
-            return p.callback(new Error('One document should be found, not ' + data.length));
-        var p3 = {
-            id: data[0],
-            callback: p.callback
-        };
-        if (p.user) p3.user = p.user;
-        me.documentMeta(p3);
-    };
-    this.search(p2);
-};
+            throw new Error('One document should be found, not ' + data.length);
+        var p2 = { id: data[0] };
+        if (p.user) p2.user = p.user;
+        if (p.company) p2.company = p.company;
+        return documentMeta(me, p2);
+    });
+}
 
-TDoc.prototype.parcelCreate = function (p) {
-    if (arguments.length > 1) // backward compatibility
-        p = { company: arguments[0], doctype: arguments[1], filename: arguments[2], callback: arguments[3] };
-    var me = this,
-        data = {
+function parcelCreate(me, p) {
+    var data = {
             company: p.company,
             doctype: p.doctype,
             filename: p.filename
         };
     if (p.user) data.user = p.user;
-    restler.post(me.address + 'docs/parcel/create', {
-        username: me.username,
-        password: me.password,
-        data: data
-    }).on('complete', function (data, resp) {
-        var err = getError('parcelCreate', data, resp),
-            d = [];
-        if (!err && typeof data == 'object' && 'parcel' in data)
-            d = data.parcel;
-        p.callback(err, d);
-    });
+    return parcelPOST(me, 'docs/parcel/create', data);
+}
+
+function parcelClose(me, p) {
+    var data = {
+            parcel: p.id
+        };
+    if (p.user) data.user = p.user;
+    return parcelPOST(me, 'docs/parcel/close', data);
+}
+
+function parcelDelete(me, p) {
+    var data = {
+            parcel: p.id
+        };
+    if (p.user) data.user = p.user;
+    return parcelPOST(me, 'docs/parcel/delete', data);
+}
+
+TDoc.prototype.upload = function (p) {
+    if (arguments.length > 1 || typeof p !== 'object') // backward compatibility
+        p = { ready: 1, file: arguments[0], doctype: arguments[1], period: arguments[2], meta: arguments[3], callback: arguments[4] };
+    return upload(this, p).nodeify(p.callback);
+};
+
+TDoc.prototype.update = function (p) {
+    return update(this, p).nodeify(p.callback);
+};
+
+TDoc.prototype.search = function (p) {
+    if (arguments.length > 1 || typeof p !== 'object') // backward compatibility
+        p = { doctype: arguments[0], period: arguments[1], meta: arguments[2], callback: arguments[3] };
+    return search(this, p).nodeify(p.callback);
+};
+
+TDoc.prototype.documentMeta = function (p) {
+    if (arguments.length > 1 || typeof p !== 'object') // backward compatibility
+        p = { id: arguments[0], callback: arguments[1] };
+    return documentMeta(this, p).nodeify(p.callback);
+};
+
+TDoc.prototype.searchOne = function (p) {
+    if (arguments.length > 1 || typeof p !== 'object') // backward compatibility
+        p = { doctype: arguments[0], period: arguments[1], meta: arguments[2], callback: arguments[3] };
+    return searchOne(this, p).nodeify(p.callback);
+};
+
+TDoc.prototype.parcelCreate = function (p) {
+    if (arguments.length > 1 || typeof p !== 'object') // backward compatibility
+        p = { company: arguments[0], doctype: arguments[1], filename: arguments[2], callback: arguments[3] };
+    return parcelCreate(this, p).nodeify(p.callback);
 };
 
 TDoc.prototype.parcelClose = function (p) {
-    if (arguments.length > 1) // backward compatibility
+    if (arguments.length > 1 || typeof p !== 'object') // backward compatibility
         p = { id: arguments[0], callback: arguments[1] };
-    var me = this,
-        data = {
-            parcel: p.id
-        };
-    if (p.user) data.user = p.user;
-    restler.post(me.address + 'docs/parcel/close', {
-        username: me.username,
-        password: me.password,
-        data: data
-    }).on('complete', function (data, resp) {
-        var err = getError('parcelClose', data, resp),
-            d = [];
-        if (!err && typeof data == 'object' && 'parcel' in data)
-            d = data.parcel;
-        p.callback(err, d);
-    });
+    return parcelClose(this, p).nodeify(p.callback);
 };
 
 TDoc.prototype.parcelDelete = function (p) {
-    if (arguments.length > 1) // backward compatibility
+    if (arguments.length > 1 || typeof p !== 'object') // backward compatibility
         p = { id: arguments[0], callback: arguments[1] };
-    var me = this,
-        data = {
-            parcel: p.id
-        };
-    if (p.user) data.user = p.user;
-    restler.post(me.address + 'docs/parcel/delete', {
-        username: me.username,
-        password: me.password,
-        data: data
-    }).on('complete', function (data, resp) {
-        var err = getError('parcelDeelte', data, resp),
-            d = [];
-        if (!err && typeof data == 'object' && 'parcel' in data)
-            d = data.parcel;
-        p.callback(err, d);
-    });
+    return parcelDelete(this, p).nodeify(p.callback);
 };
 
 module.exports = TDoc;
