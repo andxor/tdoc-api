@@ -27,6 +27,10 @@ TDoc.Error = function (method, code, message) {
 TDoc.Error.prototype = Object.create(Error.prototype);
 TDoc.Error.prototype.constructor = TDoc.Error;
 
+TDoc.longStack = function (val) {
+    Q.longStackSupport = !!val;
+}
+
 function forceNumber(n) {
     return +n;
 }
