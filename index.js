@@ -147,7 +147,7 @@ function update(me, p) {
     var s = commonUploadParams(p);
     if (p.file)
         return qStat(p.file)
-            .then(function (stat) {
+            .then(function (stats) {
                 s.document = restler.file(p.file, null, stats.size, null, s.mimetype);
                 return documentPOST(me, 'docs/update', s);
             });
@@ -168,7 +168,7 @@ function search(me, p) {
     if (p.period) data.period = forceNumber(p.period);
     return POST(me, 'docs/search', data).then(function (data) {
         var d = [];
-        if (!err && typeof data == 'object' && 'documents' in data)
+        if (typeof data == 'object' && 'documents' in data)
             d = data.documents.map(forceNumber);
         return d;
     });
@@ -182,7 +182,7 @@ function documentMeta(me, p) {
 }
 
 function searchOne(me, p) {
-    return search(me, p2).then(function (data) {
+    return search(me, p).then(function (data) {
         if (data.length != 1)
             throw new Error('One document should be found, not ' + data.length);
         var p2 = { id: data[0] };
