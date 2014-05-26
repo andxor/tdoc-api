@@ -48,6 +48,8 @@ function GET(me, method, data) {
         username: me.username,
         password: me.password,
         query: data
+    }).fail(function (err) {
+        throw new TDoc.Error(method, err.status, err.message || 'HTTP ' + err.status);
     }).then(function (data) {
         if (typeof data == 'object' && 'message' in data)
             throw new TDoc.Error(method, data.code, data.message);
@@ -60,6 +62,8 @@ function POST(me, method, data) {
         username: me.username,
         password: me.password,
         data: data
+    }).fail(function (err) {
+        throw new TDoc.Error(method, err.status, err.message || 'HTTP ' + err.status);
     }).then(function (data) {
         if (typeof data == 'object' && 'message' in data)
             throw new TDoc.Error(method, data.code, data.message);
@@ -73,6 +77,8 @@ function documentPOST(me, method, data) {
         username: me.username,
         password: me.password,
         data: data
+    }).fail(function (err) {
+        throw new TDoc.Error(method, err.status, err.message || 'HTTP ' + err.status);
     }).then(function (data) {
         if (typeof data == 'object' && 'message' in data)
             throw new TDoc.Error(method, data.code, data.message);
