@@ -103,7 +103,8 @@ function parcelPOST(me, method, data) {
 
 function commonUploadParams(p) {
     var s = {};
-    s.mimetype = p.mimetype || 'application/pdf';
+    if (p.mimetype)
+        s.mimetype = p.mimetype;
     if (p.user)
         s.user = p.user;
     if (p.company)
