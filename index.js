@@ -116,7 +116,7 @@ function commonUploadParams(p) {
     if (p.pages)
         s.pages = forceNumber(p.pages);
     if (p.meta)
-        s.meta = JSON.stringify(p.meta);
+        s.meta = restler.data('a.json', 'application/json', new Buffer(JSON.stringify(p.meta), 'utf8'));
     if (p.alias && p.pin) {
         s.alias = p.alias;
         s.pin = p.pin;
