@@ -9,6 +9,8 @@ var util = require('util'),
     fs = require('fs'),
     Q = require('q'),
     restler = require('restler-q'),
+    restlerData = require('restler').data,
+    restlerFile = require('restler').file,
     qStat = Q.denodeify(fs.stat);
 
 function TDoc(address, username, password) {
@@ -127,7 +129,7 @@ function commonUploadParams(p) {
     if (p.pages)
         s.pages = forceNumber(p.pages);
     if (p.meta)
-        s.meta = restler.data('a.json', 'application/json', new Buffer(JSON.stringify(p.meta), 'utf8'));
+        s.meta = restlerData('a.json', 'application/json', new Buffer(JSON.stringify(p.meta), 'utf8'));
     if (p.alias && p.pin) {
         s.alias = p.alias;
         s.pin = p.pin;
@@ -153,11 +155,11 @@ function upload(me, p) {
     if (p.file)
         return qStat(p.file)
             .then(function (stat) {
-                s.document = restler.file(p.file, null, stat.size, null, s.mimetype);
+                s.document = restlerFile(p.file, null, stat.size, null, s.mimetype);
                 return documentPOST(me, 'docs/upload', s);
             });
     else if (p.data) {
-        s.document = restler.data('a.bin', s.mimetype, p.data);
+        s.document = restlerData('a.bin', s.mimetype, p.data);
         return documentPOST(me, 'docs/upload', s);
     } else if (!p.ready)
         return documentPOST(me, 'docs/upload', s);
@@ -170,11 +172,11 @@ function update(me, p) {
     if (p.file)
         return qStat(p.file)
             .then(function (stats) {
-                s.document = restler.file(p.file, null, stats.size, null, s.mimetype);
+                s.document = restlerFile(p.file, null, stats.size, null, s.mimetype);
                 return documentPOST(me, 'docs/update', s);
             });
     else if (p.data) {
-        s.document = restler.data('a.bin', s.mimetype, p.data);
+        s.document = restlerData('a.bin', s.mimetype, p.data);
         return documentPOST(me, 'docs/update', s);
     } else
         return documentPOST(me, 'docs/update', s);
