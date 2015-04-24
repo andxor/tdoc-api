@@ -57,6 +57,17 @@ function GET(me, method, data) {
     });
 }
 
+function GETbuffer(me, method, data) {
+    return restler.get(me.address + method, {
+        username: me.username,
+        password: me.password,
+        query: data,
+        decoding: 'buffer'
+    }).fail(function (err) {
+        throw new TDoc.Error(method, err.status, err.message || 'HTTP ' + err.status);
+    });
+}
+
 function POST(me, method, data) {
     return restler.post(me.address + method, {
         username: me.username,
@@ -185,6 +196,13 @@ function search(me, p) {
     });
 }
 
+function document(me, p) {
+    var data = {};
+    if (p.user) data.user = p.user;
+    if (p.company) data.company = p.company;
+    return GETbuffer(me, 'docs/' + (0|p.id), data);
+}
+
 function documentMeta(me, p) {
     var data = {};
     if (p.user) data.user = p.user;
@@ -246,6 +264,10 @@ TDoc.prototype.search = function (p) {
     if (arguments.length > 1 || typeof p !== 'object') // backward compatibility
         p = { doctype: arguments[0], period: arguments[1], meta: arguments[2], callback: arguments[3] };
     return search(this, p).nodeify(p.callback);
+};
+
+TDoc.prototype.document = function (p) {
+    return document(this, p).nodeify(p.callback);
 };
 
 TDoc.prototype.documentMeta = function (p) {

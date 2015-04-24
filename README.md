@@ -12,6 +12,7 @@ All the methods have a single object parameter, used to have optional parameters
 
 - [`upload`](#upload)
 - [`update`](#update)
+- [`document`](#document)
 - [`documentMeta`](#documentmeta)
 - [`search`](#search)
 - [`searchOne`](#searchone)
@@ -54,6 +55,16 @@ __Arguments__
 * `company`: if the user has access to more than one company, use this optional field to specify which one the `doctype` refers to
 * `alias` & `pin`: specify those fields when you need to apply a digital signature to the document
 * `overwrite`: the document identifier of a (not yet preserved) document to overwrite (optional)
+* `user`: (optional) the user the upload is made on the behalf of (to be used if and only if the authentication user is root)
+* `callback(err, data)`: `err` in case of error or `data` will contain full document metadata
+
+### `document`
+
+Retrieves a Buffer with the content of a document.
+
+__Arguments__
+
+* `id`: the identifier of the document
 * `user`: (optional) the user the upload is made on the behalf of (to be used if and only if the authentication user is root)
 * `callback(err, data)`: `err` in case of error or `data` will contain full document metadata
 
