@@ -13,7 +13,8 @@
   },
   "dependencies": {
     "q": "^1.0.1",
-    "restler": "^3.2.2"
+    "restler": "^3.2.2",
+    "restler-q": "^0.1.1"
   },
   "devDependencies": {},
   "scripts": {

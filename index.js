@@ -8,7 +8,7 @@
 var util = require('util'),
     fs = require('fs'),
     Q = require('q'),
-    restler = require('./lib/restler-q'),
+    restler = require('restler-q'),
     qStat = Q.denodeify(fs.stat);
 
 function TDoc(address, username, password) {
