@@ -1,6 +1,6 @@
 {
   "name": "tdoc-api",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "Wrapper around tDoc REST-ful APIs",
   "main": "index.js",
   "homepage": "https://github.com/andxor/tdoc-api",
@@ -12,9 +12,8 @@
     "node": ">=0.10.x"
   },
   "dependencies": {
-    "q": "^1.0.1",
-    "restler": "^3.2.2",
-    "restler-q": "^0.1.1"
+    "q": "^1.4.1",
+    "restler": "^3.2.2"
   },
   "devDependencies": {},
   "scripts": {
