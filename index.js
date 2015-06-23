@@ -2,14 +2,13 @@
  * node tDoc API wrapper
  * (c) 2014 Lapo Luchini <l.luchini@andxor.it>
  */
-/*jshint node: true, strict: true, globalstrict: true, indent: 4, immed: true, undef: true, sub: true */
+/*jshint node: true, strict: true, globalstrict: true, indent: 4, immed: true, undef: true, sub: true, newcap: false */
 'use strict';
 
 var util = require('util'),
-    fs = require('fs'),
-    Q = require('q'),
-    restler = require('./lib/restler-q'),
-    qStat = Q.denodeify(fs.stat);
+    Q = require('./lib/promise'), // we're currently using Bluebird, but Q is a shorter name
+    fs = Q.promisifyAll(require('fs')),
+    restler = require('./lib/restler-q');
 
 function TDoc(address, username, password) {
     this.address = address.replace(/\/?$/, '/'); // check that it includes the trailing slash
@@ -17,19 +16,24 @@ function TDoc(address, username, password) {
     this.password = password;
 }
 
-TDoc.Error = function (method, code, message) {
+TDoc.Error = function (method, err) {
     // inspired by: http://stackoverflow.com/a/8460753/166524
-    this.name = this.constructor.name;
+    this.name = 'TDoc.Error';
     this.method = method;
-    this.code = 0|code;
-    this.message = message;
+    this.code = 0|err.code;
+    this.status = 0|err.status;
+    this.message = err.message;
+    this.additional = err.additional||[];
 };
 TDoc.Error.prototype = Object.create(Error.prototype);
 TDoc.Error.prototype.constructor = TDoc.Error;
 
 TDoc.longStack = function (val) {
-    Q.longStackSupport = !!val;
-}
+    if (val || typeof val == 'undefined')
+        Q.longStackTraces();
+    else
+        console.log('WARNING: long stack traces can\'t be disabled in this version.');
+};
 
 function forceNumber(n) {
     return +n;
@@ -49,7 +53,7 @@ function GET(me, method, data) {
         password: me.password,
         query: data
     }).fail(function (err) {
-        throw new TDoc.Error(method, err.status, err.message || 'HTTP ' + err.status);
+        throw new TDoc.Error(method, err);
     }).then(function (data) {
         if (typeof data == 'object' && 'message' in data)
             throw new TDoc.Error(method, data.code, data.message);
@@ -64,7 +68,7 @@ function GETbuffer(me, method, data) {
         query: data,
         decoding: 'buffer'
     }).fail(function (err) {
-        throw new TDoc.Error(method, err.status, err.message || 'HTTP ' + err.status);
+        throw new TDoc.Error(method, err);
     });
 }
 
@@ -74,7 +78,7 @@ function POST(me, method, data) {
         password: me.password,
         data: data
     }).fail(function (err) {
-        throw new TDoc.Error(method, err.status, err.message || 'HTTP ' + err.status);
+        throw new TDoc.Error(method, err);
     }).then(function (data) {
         if (typeof data == 'object' && 'message' in data)
             throw new TDoc.Error(method, data.code, data.message);
@@ -89,7 +93,7 @@ function documentPOST(me, method, data) {
         password: me.password,
         data: data
     }).fail(function (err) {
-        throw new TDoc.Error(method, err.status, err.message || 'HTTP ' + err.status);
+        throw new TDoc.Error(method, err);
     }).then(function (data) {
         if (typeof data == 'object' && 'message' in data)
             throw new TDoc.Error(method, data.code, data.message);
@@ -151,7 +155,7 @@ function upload(me, p) {
     var s = commonUploadParams(p);
     s.doctype = p.doctype;
     if (p.file)
-        return qStat(p.file)
+        return fs.statAsync(p.file)
             .then(function (stat) {
                 s.document = restler.file(p.file, null, stat.size, null, s.mimetype);
                 return documentPOST(me, 'docs/upload', s);
@@ -168,7 +172,7 @@ function upload(me, p) {
 function update(me, p) {
     var s = commonUploadParams(p);
     if (p.file)
-        return qStat(p.file)
+        return fs.statAsync(p.file)
             .then(function (stats) {
                 s.document = restler.file(p.file, null, stats.size, null, s.mimetype);
                 return documentPOST(me, 'docs/update', s);
