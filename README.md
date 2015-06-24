@@ -6,7 +6,11 @@ node wrapper around tDoc REST-ful APIs
 API
 ---
 
-All the methods have a single object parameter, used to have optional parameters.
+All the methods have a single object parameter, used as a way to have named optional parameters.
+
+All methods return a [Promise/A+](https://promisesaplus.com/) but accept an optional Node-style `callback(err, data)` parameter.
+
+All methods accept a `user` parameter used to specify the user the request is made on the behalf of (to be used if and only if the authentication user is root).
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -16,6 +20,7 @@ All the methods have a single object parameter, used to have optional parameters
 - [`documentMeta`](#documentmeta)
 - [`search`](#search)
 - [`searchOne`](#searchone)
+- [`documentDelete`](#documentdelete)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -31,13 +36,16 @@ __Arguments__
 * `mimetype`: the content media type (defaults to `application/pdf`)
 * `doctype`: docType to upload the document into
 * `period`: fiscal period the document refers to; use current year for documents that don't have such concept
+* `parcel`: an optional parcel identifier (created with [`parcelCreate`](#parcelcreate))
 * `meta`: all the metadata to associate to the document (optional if `ready` is false)
 * `ready`: if the document is ready for preservation or still incomplete (defaults to `true`)
 * `company`: if the user has access to more than one company, use this optional field to specify which one the `doctype` refers to
 * `alias` & `pin`: specify those fields when you need to apply a digital signature to the document
 * `overwrite`: the document identifier of a (not yet preserved) document to overwrite (optional)
-* `user`: (optional) the user the upload is made on the behalf of (to be used if and only if the authentication user is root)
-* `callback(err, data)`: `err` in case of error or `data` will contain full document metadata
+
+__Returns__
+
+Full document metadata.
 
 ### `update`
 
@@ -55,8 +63,10 @@ __Arguments__
 * `company`: if the user has access to more than one company, use this optional field to specify which one the `doctype` refers to
 * `alias` & `pin`: specify those fields when you need to apply a digital signature to the document
 * `overwrite`: the document identifier of a (not yet preserved) document to overwrite (optional)
-* `user`: (optional) the user the upload is made on the behalf of (to be used if and only if the authentication user is root)
-* `callback(err, data)`: `err` in case of error or `data` will contain full document metadata
+
+__Returns__
+
+Full document metadata.
 
 ### `document`
 
@@ -65,8 +75,10 @@ Retrieves a Buffer with the content of a document.
 __Arguments__
 
 * `id`: the identifier of the document
-* `user`: (optional) the user the upload is made on the behalf of (to be used if and only if the authentication user is root)
-* `callback(err, data)`: `err` in case of error or `data` will contain full document metadata
+
+__Returns__
+
+Full document content.
 
 ### `documentMeta`
 
@@ -75,8 +87,10 @@ Retrieves the full metadata of a document.
 __Arguments__
 
 * `id`: the identifier of the document
-* `user`: (optional) the user the upload is made on the behalf of (to be used if and only if the authentication user is root)
-* `callback(err, data)`: `err` in case of error or `data` will contain full document metadata
+
+__Returns__
+
+Full document metadata.
 
 ### `search`
 
@@ -87,8 +101,10 @@ __Arguments__
 * `doctype`: docType to search
 * `period`: (optional) fiscal period to search
 * `meta`: any metadata to search for
-* `user`: (optional) the user the upload is made on the behalf of (to be used if and only if the authentication user is root)
-* `callback(err, data)`: `err` in case of error or `data` will be an array of document identifiers
+
+__Returns__
+
+An array of document identifier.
 
 ### `searchOne`
 
@@ -102,5 +118,59 @@ __Arguments__
 * `doctype`: docType to search
 * `period`: (optional) fiscal period to search
 * `meta`: any metadata to search for
-* `user`: (optional) the user the upload is made on the behalf of (to be used if and only if the authentication user is root)
-* `callback(err, data)`: `err` in case of error or `data` will contain full document metadata
+
+__Returns__
+
+Full document metadata.
+
+### `parcelCreate`
+
+Opens a new parcel to upload one or more documents as a single entity.
+
+__Arguments__
+
+* `doctype`: docType to create the parcel in
+* `filename`: the (unique) filename of this parcel
+
+__Returns__
+
+The parcel unique identifier.
+
+### `parcelClose`
+
+Closes the parcel.
+
+__Arguments__
+
+* `id`: the identifier of the parcel
+* `extra`: (optional) a string containing the parcel source metadata
+
+__Returns__
+
+All the metadata of the closed parcel.
+
+### `parcelDelete`
+
+Deletes the parcel (and all the documents it contained).
+
+__Arguments__
+
+* `id`: the identifier of the parcel
+* `error`: (optional) a string containing the error that required the deletion of the parcel
+* `extra`: (optional) a string containing the parcel source metadata
+
+__Returns__
+
+All the metadata of the closed parcel.
+
+### `documentDelete`
+
+Deletes a document.
+
+__Arguments__
+
+* `id`: the identifier of the document
+
+__Returns__
+
+Nothing.

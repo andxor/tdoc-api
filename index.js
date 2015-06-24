@@ -18,6 +18,8 @@ function TDoc(address, username, password) {
 
 TDoc.Error = function (method, err) {
     // inspired by: http://stackoverflow.com/a/8460753/166524
+    if ('captureStackTrace' in Error)
+        Error.captureStackTrace(this, this.constructor);
     this.name = 'TDoc.Error';
     this.method = method;
     this.code = 0|err.code;
@@ -29,10 +31,8 @@ TDoc.Error.prototype = Object.create(Error.prototype);
 TDoc.Error.prototype.constructor = TDoc.Error;
 
 TDoc.longStack = function (val) {
-    if (val || typeof val == 'undefined')
-        Q.longStackTraces();
-    else
-        console.log('WARNING: long stack traces can\'t be disabled in this version.');
+    if (!val)
+        console.log('WARNING: long stack traces are always enabled in version 2.x');
 };
 
 function forceNumber(n) {
@@ -62,6 +62,7 @@ function GET(me, method, data) {
 }
 
 function GETbuffer(me, method, data) {
+    // could use hash contained in ETag to verify output
     return restler.get(me.address + method, {
         username: me.username,
         password: me.password,
@@ -214,6 +215,13 @@ function documentMeta(me, p) {
     return GET(me, 'docs/' + (0|p.id) + '/meta', data);
 }
 
+function documentDelete(me, p) {
+    var data = {};
+    if (p.user) data.user = p.user;
+    if (p.company) data.company = p.company;
+    return GET(me, 'docs/' + (0|p.id) + '/delete', data);
+}
+
 function searchOne(me, p) {
     return search(me, p).then(function (data) {
         if (data.length != 1)
@@ -278,6 +286,10 @@ TDoc.prototype.documentMeta = function (p) {
     if (arguments.length > 1 || typeof p !== 'object') // backward compatibility
         p = { id: arguments[0], callback: arguments[1] };
     return documentMeta(this, p).nodeify(p.callback);
+};
+
+TDoc.prototype.documentDelete = function (p) {
+    return documentDelete(this, p).nodeify(p.callback);
 };
 
 TDoc.prototype.searchOne = function (p) {
