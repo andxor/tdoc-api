@@ -20,6 +20,9 @@ All methods accept a `user` parameter used to specify the user the request is ma
 - [`documentMeta`](#documentmeta)
 - [`search`](#search)
 - [`searchOne`](#searchone)
+- [`parcelCreate`](#parcelcreate)
+- [`parcelClose`](#parcelclose)
+- [`parcelDelete`](#parceldelete)
 - [`documentDelete`](#documentdelete)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
