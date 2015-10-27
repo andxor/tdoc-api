@@ -47,6 +47,14 @@ function nameValue2Object(arr) {
     return o;
 }
 
+function massageDoc(doc) {
+    if (Array.isArray(doc.metadata)) { // old format, used up to tDoc r13584
+        doc.lotto = +doc.lotto;
+        doc.metadata = nameValue2Object(doc.metadata);
+    }
+    return doc;
+}
+
 function GET(me, method, data) {
     return restler.get(me.address + method, {
         username: me.username,
@@ -101,9 +109,7 @@ function documentPOST(me, method, data) {
         if (typeof data == 'object' && 'document' in data) {
             if ('warning' in data)
                 data.document.warning = { message: data.warning.shift(), extra: data.warning };
-            data = data.document;
-            data.metadata = nameValue2Object(data.metadata);
-            return data;
+            return massageDoc(data.document);
         }
         throw new Error('Unexpected return value: ' + JSON.stringify(data));
     });
@@ -212,7 +218,7 @@ function documentMeta(me, p) {
     var data = {};
     if (p.user) data.user = p.user;
     if (p.company) data.company = p.company;
-    return GET(me, 'docs/' + (0|p.id) + '/meta', data);
+    return GET(me, 'docs/' + (0|p.id) + '/meta', data).then(massageDoc);
 }
 
 function documentDelete(me, p) {
