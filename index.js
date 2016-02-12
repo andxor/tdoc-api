@@ -1,6 +1,6 @@
 /*!
  * node tDoc API wrapper
- * (c) 2014 Lapo Luchini <l.luchini@andxor.it>
+ * (c) 2014-2016 Lapo Luchini <l.luchini@andxor.it>
  */
 /*jshint node: true, strict: true, globalstrict: true, indent: 4, immed: true, undef: true, sub: true, newcap: false */
 'use strict';
@@ -32,7 +32,7 @@ TDoc.Error.prototype.constructor = TDoc.Error;
 
 TDoc.longStack = function (val) {
     if (!val)
-        console.log('WARNING: long stack traces are always enabled in version 2.x');
+        console.log('WARNING: long stack traces are always enabled since version 0.2.0');
 };
 
 function forceNumber(n) {
