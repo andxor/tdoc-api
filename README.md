@@ -24,6 +24,9 @@ All methods accept a `user` parameter used to specify the user the request is ma
 - [`parcelClose`](#parcelclose)
 - [`parcelDelete`](#parceldelete)
 - [`documentDelete`](#documentdelete)
+- [`companyList`](#companylist)
+- [`doctypeList`](#doctypelist)
+- [`doctypeInfo`](#doctypeinfo)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -177,3 +180,39 @@ __Arguments__
 __Returns__
 
 Nothing.
+
+### `companyList`
+
+List of companies the user has access to.
+
+__Arguments__
+
+None.
+
+__Returns__
+
+A JSON object with short company names as keys and long names as values.
+
+### `doctypeList`
+
+List of doctypes the user has access to.
+
+__Arguments__
+
+None.
+
+__Returns__
+
+A JSON object with short company names as keys and an array of doctypes names as values.
+
+### `doctypeInfo`
+
+Full information about a doctype.
+
+__Arguments__
+
+* `doctype`: the doctype (defaults to all of them)
+
+__Returns__
+
+An array of doctype objects.

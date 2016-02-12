@@ -268,6 +268,28 @@ function parcelDelete(me, p) {
     return parcelPOST(me, 'docs/parcel/delete', data);
 }
 
+function companyList(me, p) {
+    var data = {};
+    if (p.user) data.user = p.user;
+    if (p.company) data.company = p.company;
+    return GET(me, 'company/list', data);
+}
+
+function doctypeList(me, p) {
+    var data = {};
+    if (p.user) data.user = p.user;
+    if (p.company) data.company = p.company;
+    return GET(me, 'doctype/list', data);
+}
+
+function doctypeInfo(me, p) {
+    var data = {};
+    if (p.user) data.user = p.user;
+    if (p.company) data.company = p.company;
+    if (p.doctype) data.doctype = p.doctype;
+    return GET(me, 'doctype', data);
+}
+
 TDoc.prototype.upload = function (p) {
     if (arguments.length > 1 || typeof p !== 'object') // backward compatibility
         p = { ready: 1, file: arguments[0], doctype: arguments[1], period: arguments[2], meta: arguments[3], callback: arguments[4] };
@@ -320,6 +342,18 @@ TDoc.prototype.parcelDelete = function (p) {
     if (arguments.length > 1 || typeof p !== 'object') // backward compatibility
         p = { id: arguments[0], callback: arguments[1] };
     return parcelDelete(this, p).nodeify(p.callback);
+};
+
+TDoc.prototype.companyList = function (p) {
+    return companyList(this, p).nodeify(p.callback);
+};
+
+TDoc.prototype.doctypeList = function (p) {
+    return doctypeList(this, p).nodeify(p.callback);
+};
+
+TDoc.prototype.doctypeInfo = function (p) {
+    return doctypeInfo(this, p).nodeify(p.callback);
 };
 
 module.exports = TDoc;
