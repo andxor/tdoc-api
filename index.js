@@ -55,6 +55,14 @@ function massageDoc(doc) {
     return doc;
 }
 
+function massageDoctype(doctypes) {
+    doctypes.forEach(function (dt) {
+        if (typeof dt.custom == 'string') // tDoc r14171 returns it as a string, but will change in the future
+            dt.custom = JSON.parse(dt.custom);
+    });
+    return doctypes;
+}
+
 function GET(me, method, data) {
     return restler.get(me.address + method, {
         username: me.username,
@@ -297,7 +305,7 @@ function doctypeInfo(me, p) {
     if (p.user) data.user = p.user;
     if (p.company) data.company = p.company;
     if (p.doctype) data.doctype = p.doctype;
-    return GET(me, 'doctype', data);
+    return GET(me, 'doctype', data).then(massageDoctype);
 }
 
 TDoc.prototype.upload = function (p) {
