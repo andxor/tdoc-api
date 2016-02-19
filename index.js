@@ -191,6 +191,16 @@ function update(me, p) {
         return documentPOST(me, 'docs/update', s);
 }
 
+function updateMeta(me, p) {
+    var data = {
+            meta: p.meta,
+            value: p.value
+        };
+    if (p.user) data.user = p.user;
+    if (p.company) data.company = p.company;
+    return POST(me, 'docs/' + (0|p.id) + '/meta/update', data).then(massageDoc);
+}
+
 function search(me, p) {
     var data = {
             doctype: p.doctype,
@@ -298,6 +308,10 @@ TDoc.prototype.upload = function (p) {
 
 TDoc.prototype.update = function (p) {
     return update(this, p).nodeify(p.callback);
+};
+
+TDoc.prototype.updateMeta = function (p) {
+    return updateMeta(this, p).nodeify(p.callback);
 };
 
 TDoc.prototype.search = function (p) {
