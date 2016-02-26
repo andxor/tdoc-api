@@ -219,6 +219,7 @@ function search(me, p) {
     if (p.user) data.user = p.user;
     if (p.company) data.company = p.company;
     if (p.period) data.period = forceNumber(p.period);
+    if (p.limit) data.limit = forceNumber(p.limit);
     return POST(me, 'docs/search', data).then(function (data) {
         var d = [];
         if (typeof data == 'object' && 'documents' in data)
@@ -256,9 +257,10 @@ function documentDelete(me, p) {
 }
 
 function searchOne(me, p) {
+    p.limit = 2; // enforce query limit, we need 2 to knw if search was not unique
     return search(me, p).then(function (data) {
         if (data.length != 1)
-            throw new Error('One document should be found, not ' + data.length);
+            throw new Error('More than one document was found');
         var p2 = { id: data[0] };
         if (p.user) p2.user = p.user;
         if (p.company) p2.company = p.company;
