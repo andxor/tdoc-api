@@ -16,6 +16,8 @@ function TDoc(address, username, password) {
     this.password = password;
 }
 
+TDoc.Promise = Q;
+
 TDoc.Error = function (method, err) {
     // inspired by: http://stackoverflow.com/a/8460753/166524
     if ('captureStackTrace' in Error)
