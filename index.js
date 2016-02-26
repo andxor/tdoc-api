@@ -241,6 +241,13 @@ function documentMeta(me, p) {
     return GET(me, 'docs/' + (0|p.id) + '/meta', data).then(massageDoc);
 }
 
+function documentLink(me, p) {
+    var data = {};
+    if (p.user) data.user = p.user;
+    if (p.company) data.company = p.company;
+    return GET(me, 'docs/' + (0|p.id) + '/link', data);
+}
+
 function documentDelete(me, p) {
     var data = {};
     if (p.user) data.user = p.user;
@@ -338,6 +345,10 @@ TDoc.prototype.documentMeta = function (p) {
     if (arguments.length > 1 || typeof p !== 'object') // backward compatibility
         p = { id: arguments[0], callback: arguments[1] };
     return documentMeta(this, p).nodeify(p.callback);
+};
+
+TDoc.prototype.documentLink = function (p) {
+    return documentLink(this, p).nodeify(p.callback);
 };
 
 TDoc.prototype.documentDelete = function (p) {
