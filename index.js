@@ -257,10 +257,10 @@ function documentDelete(me, p) {
 }
 
 function searchOne(me, p) {
-    p.limit = 2; // enforce query limit, we need 2 to knw if search was not unique
+    p.limit = 2; // we need 1 but limit to 2 to know if search was not unique
     return search(me, p).then(function (data) {
         if (data.length != 1)
-            throw new Error('More than one document was found');
+            throw new Error('Search result was not a single document');
         var p2 = { id: data[0] };
         if (p.user) p2.user = p.user;
         if (p.company) p2.company = p.company;
