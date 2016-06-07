@@ -283,6 +283,7 @@ function parcelClose(me, p) {
             parcel: p.id
         };
     if (p.user) data.user = p.user;
+    if (p.company) data.company = p.company;
     if (p.extra) data.extra = p.extra;
     return parcelPOST(me, 'docs/parcel/close', data);
 }
@@ -292,6 +293,7 @@ function parcelDelete(me, p) {
             parcel: p.id
         };
     if (p.user) data.user = p.user;
+    if (p.company) data.company = p.company;
     if (p.error) data.error = p.error;
     if (p.extra) data.extra = p.extra;
     return parcelPOST(me, 'docs/parcel/delete', data);
