@@ -220,10 +220,11 @@ function search(me, p) {
     if (p.company) data.company = p.company;
     if (p.period) data.period = forceNumber(p.period);
     if (p.limit) data.limit = forceNumber(p.limit);
+    if (p.complete) data.complete = 1;
     return POST(me, 'docs/search', data).then(function (data) {
         var d = [];
         if (typeof data == 'object' && 'documents' in data)
-            d = data.documents.map(forceNumber);
+            d = data.documents;
         return d;
     });
 }
