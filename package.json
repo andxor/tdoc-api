@@ -1,6 +1,6 @@
 {
   "name": "tdoc-api",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "description": "Wrapper around tDoc REST-ful APIs",
   "main": "index.js",
   "homepage": "https://github.com/andxor/tdoc-api",
@@ -9,15 +9,23 @@
     "url": "https://github.com/andxor/tdoc-api.git"
   },
   "engines": {
-    "node": ">=0.10.x"
+    "node": ">=4.3.2"
   },
   "dependencies": {
     "bluebird": "^3.3.3",
     "restler": "^3.2.2"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "tape": "^4.6.2",
+    "tape-nock": "^1.2.2"
+  },
+  "files": [
+    "index.js",
+    "lib/promise.js",
+    "lib/restler-q.js"
+  ],
   "scripts": {
-    "test": "node test.js"
+    "test": "node test/test.js local"
   },
   "bugs": "https://github.com/andxor/tdoc-api/issues",
   "author": "Lapo Luchini <l.luchini@andxor.it>",
