@@ -1,0 +1,23 @@
+[
+    {
+        "scope": "http://127.0.0.1:80",
+        "method": "POST",
+        "path": "/tdoc/api/docs/search",
+        "body": "doctype=File&meta=%7B%22%24dateIns%22%3A%7B%22%24gte%22%3A123456%2C%22%24lte%22%3A%222016-06-28%22%7D%7D&limit=7",
+        "status": 200,
+        "response": [
+            "1f8b0800000000000000",
+            "ab564ac94f2ecd4dcd2b2956b28a36b4343536d631343732b70493e660d254c7d0c0d4cc044c1a814983d85a00892b89ec39000000"
+        ],
+        "headers": {
+            "server": "Apache-Coyote/1.1",
+            "access-control-allow-origin": "*",
+            "vary": "Accept-Encoding",
+            "content-encoding": "gzip",
+            "content-type": "application/json;charset=UTF-8",
+            "transfer-encoding": "chunked",
+            "date": "Thu, 06 Oct 2016 13:49:33 GMT",
+            "connection": "close"
+        }
+    }
+]

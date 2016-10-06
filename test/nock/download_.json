@@ -1,0 +1,24 @@
+[
+    {
+        "scope": "http://127.0.0.1:80",
+        "method": "GET",
+        "path": "/tdoc/api/docs/17275",
+        "body": "",
+        "status": 200,
+        "response": [
+            "1f8b08000000000000003368622e3668628a5ec0ccc4c8c42460113fadc3e8eac9e5872f2729c53333bb1af0b2716ab579b47de76564e46665307036e436e064630e65611366f20c31e407ca03395c3c6c8e792915f945863c065c20016e1e668f605f43510361108f99870722ade0eca8e06e642027ce6b68646864606c60696c6e641825ce6b8ccca58e254d8c4ac88e676465606e62e467008a7331353132327c8ef4f8f5562da5ffa64219e316b663cf1f2e5078ffdef1b7fbbcc6855b2262d9b3993574ae3e72fa1ab2ff85c62f5e5f9619a586c55e7ef6dbb35cf904a7ef34e3c95f1dba25f299c569dba2997cc991dcd323966d9a3ce97bca83c89c479def75756d673f7b94bd5347e4b48bcf9bc33e25171fde9f299ea2cb79e5537406fbd19a335ba55f087136bd689aa1ca798c83853f65c3bb9695b3de9cff7df757c8bac96c7bb9923e1d0f6b385fbcf47ed8919a6f8bfea8c7f46adeffcc6eb35c67d90c73db2913f4fb59aa19df99fafe3299344f943fa9f56cb7c3acbbfe510e2f3837df637af477e6b697cc0faa3db2722a636fe55f38dd2bc3f2cc45f8d98a8b760d05e76685effb98d120601ecac4ccc8c0b838d920d1801f187cb2c28c8cff59580d988194011f48801f24c0024c156c06b2203e1f8b188b88d95a96631f1f18ae286b3869f4dc9e8b695b2f6b84813c485a9945c240ac01bb02d434c40c0afd374676cafa765ceeff62a4974cb892b7f540eec3b263cff2666584e9f43f6151f1e5b8296830e9cd22f395e6161df704d74cda7ae0e4995a17dd0d262b624ecc7fa722509a755d4e53c02e977b877efec7adf71bd73df821f19dd3b0e846f7baf4d71bac26b2ccf2dff5fa79cbe9927793366c76aab91f36a17cd98a54fdadbb96cfdc955fa6e757e0766a574fdbada436917b1bfd1558fa9b1e9ba9f31d5ef43665a680d8ba75b3cff44c5cf745877bd1f2cdbb155e7f3c20283aa9c7288cb563fd8d650edccbf5bd77a629edbab0eae7da8df383eedba8679c5cd7162cd71a7a326e4ec33e8ead17930d9b6f36f4fa75195e385276f2d6f4db4f2dafda484b75ad33d473e67eacb1b88e69c55761001ae5cf2c77030000"
+        ],
+        "headers": {
+            "server": "Apache-Coyote/1.1",
+            "access-control-allow-origin": "*",
+            "content-disposition": "attachment; filename=0000437B.cer",
+            "etag": "\"13C75EFE1F30810589EB35CD9BACF0EDB91A989110EAC8374344BD9380C9CF32-gzip\"",
+            "vary": "Accept-Encoding",
+            "content-encoding": "gzip",
+            "content-type": "application/pkix-cert",
+            "content-length": "795",
+            "date": "Thu, 06 Oct 2016 13:58:54 GMT",
+            "connection": "close"
+        }
+    }
+]
