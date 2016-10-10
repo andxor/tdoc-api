@@ -2,10 +2,11 @@
  * node tDoc API wrapper
  * (c) 2014-2016 Lapo Luchini <l.luchini@andxor.it>
  */
-/*jshint node: true, strict: true, globalstrict: true, indent: 4, immed: true, undef: true, sub: true, newcap: false */
+/*jshint node: true, strict: true, globalstrict: true, esversion: 6, varstmt: true, indent: 4, immed: true, undef: true, sub: true, newcap: false */
 'use strict';
 
-var util = require('util'),
+const
+    util = require('util'),
     crypto = require('crypto'),
     Q = require('./lib/promise'), // we're currently using Bluebird, but Q is a shorter name
     req = require('superagent');
@@ -42,7 +43,7 @@ function forceNumber(n) {
 }
 
 function nameValue2Object(arr) {
-    var o = {};
+    const o = {};
     arr.forEach(function (e) {
         o[e.name] = e.value;
     });
@@ -73,7 +74,7 @@ function GET(me, method, data) {
     ).fail(function (err) {
         throw new TDoc.Error(method, err.response.body);
     }).then(function (resp) {
-        var data = resp.body;
+        const data = resp.body;
         if (typeof data == 'object' && 'message' in data)
             throw new TDoc.Error(method, data.code, data.message);
         return data;
@@ -90,7 +91,7 @@ function GETbuffer(me, method, data) {
         throw new TDoc.Error(method, err.response.body);
     }).then(function (resp) {
         if ('etag' in resp.header) {
-            var h = crypto.createHash('sha256').update(resp.body).digest('hex').toUpperCase();
+            const h = crypto.createHash('sha256').update(resp.body).digest('hex').toUpperCase();
             if (resp.header.etag.indexOf(h) != 1)
                 throw new Error('Hash value mismatch.');
         }
@@ -107,7 +108,7 @@ function POST(me, method, data) {
     ).fail(function (err) {
         throw new TDoc.Error(method, err.response.body);
     }).then(function (resp) {
-        var data = resp.body;
+        const data = resp.body;
         if (typeof data == 'object' && 'message' in data)
             throw new TDoc.Error(method, data.code, data.message);
         return data;
@@ -115,7 +116,7 @@ function POST(me, method, data) {
 }
 
 function documentPOST(me, method, data, document) {
-    var r = req
+    const r = req
         .post(me.address + method)
         .auth(me.username, me.password)
         .field(data);
@@ -125,7 +126,7 @@ function documentPOST(me, method, data, document) {
     ).fail(function (err) {
         throw new TDoc.Error(method, err.response.body);
     }).then(function (resp) {
-        var data = resp.body;
+        const data = resp.body;
         if (typeof data == 'object' && 'message' in data)
             throw new TDoc.Error(method, data.code, data.message);
         if (typeof data == 'object' && 'document' in data) {
@@ -146,7 +147,7 @@ function parcelPOST(me, method, data) {
 }
 
 function commonUploadParams(p) {
-    var s = {};
+    const s = {};
     if (p.mimetype)
         s.mimetype = p.mimetype;
     if (p.user)
@@ -183,19 +184,18 @@ function upload(me, p) {
         return Q.reject(new Error('if the document is ‘ready’ it must contain ‘meta’'));
     if (p.ready && (!p.file && !p.data))
         return Q.reject(new Error('if the document is ‘ready’ it must have a content as either ‘file’ or ‘data’'));
-    var s = commonUploadParams(p),
-        d = null;
+    const s = commonUploadParams(p);
     s.doctype = p.doctype;
     return documentPOST(me, 'docs/upload', s, p.file || p.data);
 }
 
 function update(me, p) {
-    var s = commonUploadParams(p);
+    const s = commonUploadParams(p);
     return documentPOST(me, 'docs/update', s, p.file || p.data);
 }
 
 function updateMeta(me, p) {
-    var data = {
+    const data = {
             meta: p.meta,
             value: p.value
         };
@@ -205,7 +205,7 @@ function updateMeta(me, p) {
 }
 
 function search(me, p) {
-    var data = {
+    const data = {
             doctype: p.doctype,
             meta: JSON.stringify(p.meta)
         };
@@ -215,47 +215,47 @@ function search(me, p) {
     if (p.limit) data.limit = forceNumber(p.limit);
     if (p.complete) data.complete = 1;
     return POST(me, 'docs/search', data).then(function (data) {
-        var d = [];
         if (typeof data == 'object' && 'documents' in data)
-            d = data.documents;
-        return d;
+            return data.documents;
+        throw new Error('malformed response');
     });
 }
 
 function document(me, p) {
-    var data = {};
+    const data = {};
     if (p.user) data.user = p.user;
     if (p.company) data.company = p.company;
     return GETbuffer(me, 'docs/' + (0|p.id), data);
 }
 
 function documentMeta(me, p) {
-    var data = {};
+    const data = {};
     if (p.user) data.user = p.user;
     if (p.company) data.company = p.company;
     return GET(me, 'docs/' + (0|p.id) + '/meta', data).then(massageDoc);
 }
 
 function documentLink(me, p) {
-    var data = {};
+    const data = {};
     if (p.user) data.user = p.user;
     if (p.company) data.company = p.company;
     return GET(me, 'docs/' + (0|p.id) + '/link', data);
 }
 
 function documentDelete(me, p) {
-    var data = {};
+    const data = {};
     if (p.user) data.user = p.user;
     if (p.company) data.company = p.company;
     return GET(me, 'docs/' + (0|p.id) + '/delete', data);
 }
 
 function searchOne(me, p) {
+    //TODO: use "complete" to avoid the second call
     p.limit = 2; // we need 1 but limit to 2 to know if search was not unique
     return search(me, p).then(function (data) {
         if (data.length != 1)
             throw new Error('Search result was not a single document');
-        var p2 = { id: data[0] };
+        const p2 = { id: data[0] };
         if (p.user) p2.user = p.user;
         if (p.company) p2.company = p.company;
         return documentMeta(me, p2);
@@ -263,7 +263,7 @@ function searchOne(me, p) {
 }
 
 function parcelCreate(me, p) {
-    var data = {
+    const data = {
             company: p.company,
             doctype: p.doctype,
             filename: p.filename
@@ -273,7 +273,7 @@ function parcelCreate(me, p) {
 }
 
 function parcelClose(me, p) {
-    var data = {
+    const data = {
             parcel: p.id
         };
     if (p.user) data.user = p.user;
@@ -283,7 +283,7 @@ function parcelClose(me, p) {
 }
 
 function parcelDelete(me, p) {
-    var data = {
+    const data = {
             parcel: p.id
         };
     if (p.user) data.user = p.user;
@@ -294,21 +294,21 @@ function parcelDelete(me, p) {
 }
 
 function companyList(me, p) {
-    var data = {};
+    const data = {};
     if (p.user) data.user = p.user;
     if (p.company) data.company = p.company;
     return GET(me, 'company/list', data);
 }
 
 function doctypeList(me, p) {
-    var data = {};
+    const data = {};
     if (p.user) data.user = p.user;
     if (p.company) data.company = p.company;
     return GET(me, 'doctype/list', data);
 }
 
 function doctypeInfo(me, p) {
-    var data = {};
+    const data = {};
     if (p.user) data.user = p.user;
     if (p.company) data.company = p.company;
     if (p.doctype) data.doctype = p.doctype;
