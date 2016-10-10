@@ -114,15 +114,13 @@ function POST(me, method, data) {
     });
 }
 
-function documentPOST(me, method, data, document, opts) {
+function documentPOST(me, method, data, document) {
     var r = req
         .post(me.address + method)
         .auth(me.username, me.password)
         .field(data);
-    if (document) {
-        console.log('Attach', opts);
-        r.attach('document', document, opts);
-    }
+    if (document)
+        r.attach('document', document);
     return Q.resolve(r
     ).fail(function (err) {
         throw new TDoc.Error(method, err.response.body);
