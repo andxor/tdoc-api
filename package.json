@@ -21,8 +21,7 @@
   },
   "files": [
     "index.js",
-    "lib/promise.js",
-    "lib/restler-q.js"
+    "lib/promise.js"
   ],
   "scripts": {
     "test": "node test/test.js local"
