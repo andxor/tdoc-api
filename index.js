@@ -81,7 +81,6 @@ function GET(me, method, data) {
 }
 
 function GETbuffer(me, method, data) {
-    // could use hash contained in ETag to verify output
     return Q.resolve(req
         .get(me.address + method)
         .auth(me.username, me.password)
@@ -90,6 +89,11 @@ function GETbuffer(me, method, data) {
     ).fail(function (err) {
         throw new TDoc.Error(method, err.response.body);
     }).then(function (resp) {
+        if ('etag' in resp.header) {
+            var h = crypto.createHash('sha256').update(resp.body).digest('hex').toUpperCase();
+            if (resp.header.etag.indexOf(h) != 1)
+                throw new Error('Hash value mismatch.');
+        }
         return resp.body;
     });
 }
