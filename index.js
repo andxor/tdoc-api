@@ -313,8 +313,6 @@ function doctypeInfo(me, p) {
 }
 
 TDoc.prototype.upload = function (p) {
-    if (arguments.length > 1 || typeof p !== 'object') // backward compatibility
-        p = { ready: 1, file: arguments[0], doctype: arguments[1], period: arguments[2], meta: arguments[3], callback: arguments[4] };
     return upload(this, p).nodeify(p.callback);
 };
 
@@ -327,8 +325,6 @@ TDoc.prototype.updateMeta = function (p) {
 };
 
 TDoc.prototype.search = function (p) {
-    if (arguments.length > 1 || typeof p !== 'object') // backward compatibility
-        p = { doctype: arguments[0], period: arguments[1], meta: arguments[2], callback: arguments[3] };
     return search(this, p).nodeify(p.callback);
 };
 
@@ -337,8 +333,6 @@ TDoc.prototype.document = function (p) {
 };
 
 TDoc.prototype.documentMeta = function (p) {
-    if (arguments.length > 1 || typeof p !== 'object') // backward compatibility
-        p = { id: arguments[0], callback: arguments[1] };
     return documentMeta(this, p).nodeify(p.callback);
 };
 
@@ -351,26 +345,18 @@ TDoc.prototype.documentDelete = function (p) {
 };
 
 TDoc.prototype.searchOne = function (p) {
-    if (arguments.length > 1 || typeof p !== 'object') // backward compatibility
-        p = { doctype: arguments[0], period: arguments[1], meta: arguments[2], callback: arguments[3] };
     return searchOne(this, p).nodeify(p.callback);
 };
 
 TDoc.prototype.parcelCreate = function (p) {
-    if (arguments.length > 1 || typeof p !== 'object') // backward compatibility
-        p = { company: arguments[0], doctype: arguments[1], filename: arguments[2], callback: arguments[3] };
     return parcelCreate(this, p).nodeify(p.callback);
 };
 
 TDoc.prototype.parcelClose = function (p) {
-    if (arguments.length > 1 || typeof p !== 'object') // backward compatibility
-        p = { id: arguments[0], callback: arguments[1] };
     return parcelClose(this, p).nodeify(p.callback);
 };
 
 TDoc.prototype.parcelDelete = function (p) {
-    if (arguments.length > 1 || typeof p !== 'object') // backward compatibility
-        p = { id: arguments[0], callback: arguments[1] };
     return parcelDelete(this, p).nodeify(p.callback);
 };
 
