@@ -6,7 +6,7 @@ node wrapper around tDoc REST-ful APIs
 API
 ---
 
-All the methods have a single object parameter, used as a way to have named optional parameters.
+All the methods have a single object parameter, used as a way to improve readability and have optional parameters.
 
 All methods return a [Promise/A+](https://promisesaplus.com/) but accept an optional Node-style `callback(err, data)` parameter.
 
