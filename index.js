@@ -6,9 +6,9 @@
 'use strict';
 
 var util = require('util'),
+    crypto = require('crypto'),
     Q = require('./lib/promise'), // we're currently using Bluebird, but Q is a shorter name
-    fs = Q.promisifyAll(require('fs')),
-    restler = require('./lib/restler-q');
+    req = require('superagent');
 
 function TDoc(address, username, password) {
     this.address = address.replace(/\/?$/, '/'); // check that it includes the trailing slash
@@ -66,13 +66,14 @@ function massageDoctype(doctypes) {
 }
 
 function GET(me, method, data) {
-    return restler.get(me.address + method, {
-        username: me.username,
-        password: me.password,
-        query: data
-    }).fail(function (err) {
-        throw new TDoc.Error(method, err);
-    }).then(function (data) {
+    return Q.resolve(req
+        .get(me.address + method)
+        .auth(me.username, me.password)
+        .query(data)
+    ).fail(function (err) {
+        throw new TDoc.Error(method, err.response.body);
+    }).then(function (resp) {
+        var data = resp.body;
         if (typeof data == 'object' && 'message' in data)
             throw new TDoc.Error(method, data.code, data.message);
         return data;
@@ -81,39 +82,48 @@ function GET(me, method, data) {
 
 function GETbuffer(me, method, data) {
     // could use hash contained in ETag to verify output
-    return restler.get(me.address + method, {
-        username: me.username,
-        password: me.password,
-        query: data,
-        decoding: 'buffer'
-    }).fail(function (err) {
-        throw new TDoc.Error(method, err);
+    return Q.resolve(req
+        .get(me.address + method)
+        .auth(me.username, me.password)
+        .buffer(true).parse(req.parse.image) // necessary to have resp.body as a Buffer
+        .query(data)
+    ).fail(function (err) {
+        throw new TDoc.Error(method, err.response.body);
+    }).then(function (resp) {
+        return resp.body;
     });
 }
 
 function POST(me, method, data) {
-    return restler.post(me.address + method, {
-        username: me.username,
-        password: me.password,
-        data: data
-    }).fail(function (err) {
-        throw new TDoc.Error(method, err);
-    }).then(function (data) {
+    return Q.resolve(req
+        .post(me.address + method)
+        .auth(me.username, me.password)
+        .type('form')
+        .send(data)
+    ).fail(function (err) {
+        throw new TDoc.Error(method, err.response.body);
+    }).then(function (resp) {
+        var data = resp.body;
         if (typeof data == 'object' && 'message' in data)
             throw new TDoc.Error(method, data.code, data.message);
         return data;
     });
 }
 
-function documentPOST(me, method, data) {
-    return restler.post(me.address + method, {
-        multipart: true,
-        username: me.username,
-        password: me.password,
-        data: data
-    }).fail(function (err) {
-        throw new TDoc.Error(method, err);
-    }).then(function (data) {
+function documentPOST(me, method, data, document, opts) {
+    var r = req
+        .post(me.address + method)
+        .auth(me.username, me.password)
+        .field(data);
+    if (document) {
+        console.log('Attach', opts);
+        r.attach('document', document, opts);
+    }
+    return Q.resolve(r
+    ).fail(function (err) {
+        throw new TDoc.Error(method, err.response.body);
+    }).then(function (resp) {
+        var data = resp.body;
         if (typeof data == 'object' && 'message' in data)
             throw new TDoc.Error(method, data.code, data.message);
         if (typeof data == 'object' && 'document' in data) {
@@ -148,7 +158,7 @@ function commonUploadParams(p) {
     if (p.pages)
         s.pages = forceNumber(p.pages);
     if (p.meta)
-        s.meta = restler.data('a.json', 'application/json', new Buffer(JSON.stringify(p.meta), 'utf8'));
+        s.meta = JSON.stringify(p.meta);
     if (p.alias && p.pin) {
         s.alias = p.alias;
         s.pin = p.pin;
@@ -169,36 +179,19 @@ function upload(me, p) {
         return Q.reject(new Error('you need to specify ‘period’'));
     if (!p.meta && p.ready)
         return Q.reject(new Error('if the document is ‘ready’ it must contain ‘meta’'));
-    var s = commonUploadParams(p);
-    s.doctype = p.doctype;
-    if (p.file)
-        return fs.statAsync(p.file)
-            .then(function (stat) {
-                s.document = restler.file(p.file, null, stat.size, null, s.mimetype);
-                return documentPOST(me, 'docs/upload', s);
-            });
-    else if (p.data) {
-        s.document = restler.data('a.bin', s.mimetype, p.data);
-        return documentPOST(me, 'docs/upload', s);
-    } else if (!p.ready)
-        return documentPOST(me, 'docs/upload', s);
-    else
+    if (p.ready && (!p.file && !p.data))
         return Q.reject(new Error('if the document is ‘ready’ it must have a content as either ‘file’ or ‘data’'));
+    var s = commonUploadParams(p),
+        d = null;
+    s.doctype = p.doctype;
+    return documentPOST(me, 'docs/upload', s, p.file || p.data);
 }
 
 function update(me, p) {
+    if (p.ready && (!p.file && !p.data))
+        return Q.reject(new Error('if the document is ‘ready’ it must have a content as either ‘file’ or ‘data’'));
     var s = commonUploadParams(p);
-    if (p.file)
-        return fs.statAsync(p.file)
-            .then(function (stats) {
-                s.document = restler.file(p.file, null, stats.size, null, s.mimetype);
-                return documentPOST(me, 'docs/update', s);
-            });
-    else if (p.data) {
-        s.document = restler.data('a.bin', s.mimetype, p.data);
-        return documentPOST(me, 'docs/update', s);
-    } else
-        return documentPOST(me, 'docs/update', s);
+    return documentPOST(me, 'docs/update', s, p.file || p.data);
 }
 
 function updateMeta(me, p) {
