@@ -192,8 +192,6 @@ function upload(me, p) {
 }
 
 function update(me, p) {
-    if (p.ready && (!p.file && !p.data))
-        return Q.reject(new Error('if the document is ‘ready’ it must have a content as either ‘file’ or ‘data’'));
     var s = commonUploadParams(p);
     return documentPOST(me, 'docs/update', s, p.file || p.data);
 }
