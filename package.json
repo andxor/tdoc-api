@@ -16,6 +16,7 @@
     "superagent": "^2.3.0"
   },
   "devDependencies": {
+    "tap-spec": "^4.1.1",
     "tape": "^4.6.2",
     "tape-nock": "^1.2.2"
   },
@@ -24,7 +25,7 @@
     "lib/promise.js"
   ],
   "scripts": {
-    "test": "node test/test.js local"
+    "test": "node test/test.js local | tap-spec"
   },
   "bugs": "https://github.com/andxor/tdoc-api/issues",
   "author": "Lapo Luchini <l.luchini@andxor.it>",
