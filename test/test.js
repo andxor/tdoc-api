@@ -36,7 +36,7 @@ test('searchOne', function (t) {
         doctype: 'File',
         meta: {$dateIns:{$gte:"2015-09-23",$lte:"2015-09-24"}}
     }).then(function (doc) {
-        t.assert(doc.docid, 10560, 'single document');
+        t.equal(doc.docid, 10560, 'single document');
     }).fail(function (err) {
         t.fail(err);
     }).finally(function () {
