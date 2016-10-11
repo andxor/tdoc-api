@@ -312,64 +312,27 @@ function doctypeInfo(me, p) {
     return GET(me, 'doctype', data).then(massageDoctype);
 }
 
-TDoc.prototype.upload = function (p) {
-    return upload(this, p).nodeify(p.callback);
-};
-
-TDoc.prototype.update = function (p) {
-    return update(this, p).nodeify(p.callback);
-};
-
-TDoc.prototype.updateMeta = function (p) {
-    return updateMeta(this, p).nodeify(p.callback);
-};
-
-TDoc.prototype.search = function (p) {
-    return search(this, p).nodeify(p.callback);
-};
-
-TDoc.prototype.document = function (p) {
-    return document(this, p).nodeify(p.callback);
-};
-
-TDoc.prototype.documentMeta = function (p) {
-    return documentMeta(this, p).nodeify(p.callback);
-};
-
-TDoc.prototype.documentLink = function (p) {
-    return documentLink(this, p).nodeify(p.callback);
-};
-
-TDoc.prototype.documentDelete = function (p) {
-    return documentDelete(this, p).nodeify(p.callback);
-};
-
-TDoc.prototype.searchOne = function (p) {
-    return searchOne(this, p).nodeify(p.callback);
-};
-
-TDoc.prototype.parcelCreate = function (p) {
-    return parcelCreate(this, p).nodeify(p.callback);
-};
-
-TDoc.prototype.parcelClose = function (p) {
-    return parcelClose(this, p).nodeify(p.callback);
-};
-
-TDoc.prototype.parcelDelete = function (p) {
-    return parcelDelete(this, p).nodeify(p.callback);
-};
-
-TDoc.prototype.companyList = function (p) {
-    return companyList(this, p).nodeify(p.callback);
-};
-
-TDoc.prototype.doctypeList = function (p) {
-    return doctypeList(this, p).nodeify(p.callback);
-};
-
-TDoc.prototype.doctypeInfo = function (p) {
-    return doctypeInfo(this, p).nodeify(p.callback);
-};
+// register nodeified versions in the prototype
+[
+    companyList,
+    doctypeInfo,
+    doctypeList,
+    document,
+    documentDelete,
+    documentLink,
+    documentMeta,
+    parcelClose,
+    parcelCreate,
+    parcelDelete,
+    search,
+    searchOne,
+    update,
+    updateMeta,
+    upload,
+].forEach(function (f) {
+    TDoc.prototype[f.name] = function (p) {
+        return f(this, p).nodeify(p.callback);
+    };
+});
 
 module.exports = TDoc;
