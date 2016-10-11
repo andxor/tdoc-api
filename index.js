@@ -290,6 +290,15 @@ function parcelDelete(me, p) {
     return parcelPOST(me, 'docs/parcel/delete', data);
 }
 
+function parcelXML(me, p) {
+    const data = {};
+    if (p.user) data.user = p.user;
+    if (p.company) data.company = p.company;
+    return GETbuffer(me, 'docs/parcel/' + p.id + '.xml', data).then(function (buf) {
+        return buf.toString('utf8');
+    });
+}
+
 function companyList(me, p) {
     const data = {};
     if (p.user) data.user = p.user;
@@ -324,6 +333,7 @@ function doctypeInfo(me, p) {
     parcelClose,
     parcelCreate,
     parcelDelete,
+    parcelXML,
     search,
     searchOne,
     update,

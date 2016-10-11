@@ -45,12 +45,21 @@ test('searchOne', function (t) {
 });
 
 test('download', function (t) {
-    tdoc.document({
+    tdoc.documentMeta({
         id: 17275
     }).then(function (doc) {
-        t.ok(doc instanceof Buffer, 'type');
-        t.equal(doc.length, 887, 'length');
-        t.equal(sha256(doc), '13c75efe1f30810589eb35cd9bacf0edb91a989110eac8374344bd9380c9cf32', 'hash');
+        return tdoc.document({
+            id: 17275
+        }).then(function (bin) {
+            t.ok(bin instanceof Buffer, 'data type');
+            t.equal(bin.length, 887, 'data length');
+            t.equal(sha256(bin), doc.hash.toLowerCase(), 'data hash');
+            return tdoc.parcelXML({
+                id: doc.parcel
+            });
+        }).then(function (xml) {
+            t.ok(xml.indexOf(doc.hash) > 0, 'parcel contains document');
+        });
     }).fail(function (err) {
         t.fail(err);
     }).finally(function () {
