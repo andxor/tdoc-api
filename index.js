@@ -25,10 +25,14 @@ TDoc.Error = function (method, err) {
         Error.captureStackTrace(this, this.constructor);
     this.name = 'TDoc.Error';
     this.method = method;
-    this.code = 0|err.code;
     this.status = 0|err.status;
+    try {
+        if ('code' in err.response.body)
+            err = err.response.body;
+    } catch (e) {}
+    this.code = 0|err.code;
     this.message = err.message;
-    this.additional = err.additional||[];
+    this.additional = err.additional || [];
 };
 TDoc.Error.prototype = Object.create(Error.prototype);
 TDoc.Error.prototype.constructor = TDoc.Error;
@@ -72,7 +76,7 @@ function GET(me, method, data) {
         .auth(me.username, me.password)
         .query(data)
     ).fail(function (err) {
-        throw new TDoc.Error(method, err.response.body);
+        throw new TDoc.Error(method, err);
     }).then(function (resp) {
         const data = resp.body;
         if (typeof data == 'object' && 'message' in data)
@@ -88,7 +92,7 @@ function GETbuffer(me, method, data) {
         .buffer(true).parse(req.parse.image) // necessary to have resp.body as a Buffer
         .query(data)
     ).fail(function (err) {
-        throw new TDoc.Error(method, err.response.body);
+        throw new TDoc.Error(method, err);
     }).then(function (resp) {
         if ('etag' in resp.header) {
             const h = crypto.createHash('sha256').update(resp.body).digest('hex').toUpperCase();
@@ -106,7 +110,7 @@ function POST(me, method, data) {
         .type('form')
         .send(data)
     ).fail(function (err) {
-        throw new TDoc.Error(method, err.response.body);
+        throw new TDoc.Error(method, err);
     }).then(function (resp) {
         const data = resp.body;
         if (typeof data == 'object' && 'message' in data)
@@ -124,7 +128,7 @@ function documentPOST(me, method, data, document) {
         r.attach('document', document);
     return Q.resolve(r
     ).fail(function (err) {
-        throw new TDoc.Error(method, err.response.body);
+        throw new TDoc.Error(method, err);
     }).then(function (resp) {
         const data = resp.body;
         if (typeof data == 'object' && 'message' in data)
