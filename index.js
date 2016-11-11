@@ -341,6 +341,8 @@ function doctypeInfo(me, p) {
     upload,
 ].forEach(function (f) {
     TDoc.prototype[f.name] = function (p) {
+        if (typeof p != 'object')
+            throw new Error('The parameter must be an object.');
         return f(this, p).nodeify(p.callback);
     };
 });
