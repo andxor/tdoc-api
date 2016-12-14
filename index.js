@@ -298,9 +298,7 @@ function parcelXML(me, p) {
     const data = {};
     if (p.user) data.user = p.user;
     if (p.company) data.company = p.company;
-    return GETbuffer(me, 'docs/parcel/' + p.id + '.xml', data).then(function (buf) {
-        return buf.toString('utf8');
-    });
+    return GETbuffer(me, 'docs/parcel/' + p.id + '.xml', data);
 }
 
 function companyList(me, p) {
