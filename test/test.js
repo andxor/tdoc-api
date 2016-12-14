@@ -1,5 +1,5 @@
 const
-    tape = require('tape'),
+    tape = require('tape'), // https://github.com/substack/tape
     tapeNock = require('tape-nock'),
     crypto = require('crypto'),
     TDoc = require('../index'),
@@ -66,3 +66,17 @@ test('download', function (t) {
         t.end();
     });
 });
+
+test('error GET', function (t) {
+    let e = null;
+    tdoc.documentMeta({
+        id: 1234567890
+    }).catch(function (e1) {
+        e = e1;
+    }).finally(function () {
+        t.ok(e instanceof Error, 'should throw an Error');
+        t.end();
+    });
+});
+
+//TODO 'error POST'
