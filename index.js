@@ -2,7 +2,6 @@
  * node tDoc API wrapper
  * (c) 2014-2018 Lapo Luchini <l.luchini@andxor.it>
  */
-/*jshint node: true, strict: true, globalstrict: true, esversion: 6, varstmt: true, indent: 4, immed: true, undef: true, sub: true, newcap: false */
 'use strict';
 
 const
