@@ -5,7 +5,6 @@
 'use strict';
 
 const
-    util = require('util'),
     crypto = require('crypto'),
     Q = require('./lib/promise'), // we're currently using Bluebird, but Q is a shorter name
     req = require('superagent'),
@@ -209,7 +208,7 @@ function update(me, p) {
 function updateMeta(me, p) {
     const data = {
             meta: p.meta,
-            value: p.value
+            value: p.value,
         };
     if (p.user) data.user = p.user;
     if (p.company) data.company = p.company;
@@ -275,7 +274,7 @@ function parcelCreate(me, p) {
     const data = {
             company: p.company,
             doctype: p.doctype,
-            filename: p.filename
+            filename: p.filename,
         };
     if (p.user) data.user = p.user;
     return parcelPOST(me, 'docs/parcel/create', data);
@@ -283,8 +282,8 @@ function parcelCreate(me, p) {
 
 function parcelClose(me, p) {
     const data = {
-            parcel: p.id
-        };
+        parcel: p.id,
+    };
     if (p.user) data.user = p.user;
     if (p.company) data.company = p.company;
     if (p.extra) data.extra = p.extra;
@@ -293,8 +292,8 @@ function parcelClose(me, p) {
 
 function parcelDelete(me, p) {
     const data = {
-            parcel: p.id
-        };
+        parcel: p.id,
+    };
     if (p.user) data.user = p.user;
     if (p.company) data.company = p.company;
     if (p.error) data.error = p.error;
