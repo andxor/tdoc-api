@@ -1,6 +1,6 @@
 /*!
  * node tDoc API wrapper
- * (c) 2014-2016 Lapo Luchini <l.luchini@andxor.it>
+ * (c) 2014-2018 Lapo Luchini <l.luchini@andxor.it>
  */
 /*jshint node: true, strict: true, globalstrict: true, esversion: 6, varstmt: true, indent: 4, immed: true, undef: true, sub: true, newcap: false */
 'use strict';
@@ -9,7 +9,12 @@ const
     util = require('util'),
     crypto = require('crypto'),
     Q = require('./lib/promise'), // we're currently using Bluebird, but Q is a shorter name
-    req = require('superagent');
+    req = require('superagent'),
+    keepalive = new (require('http')).Agent({
+        keepAlive: true, // keep alive connections for reuse
+        keepAliveMsecs: 5000, // for up to 5 seconds
+        maxSockets: 4, // do not use more than 4 parallel connections
+    });
 
 function TDoc(address, username, password) {
     this.address = address.replace(/\/?$/, '/'); // check that it includes the trailing slash
@@ -73,6 +78,7 @@ function massageDoctype(doctypes) {
 function GET(me, method, data) {
     return Q.resolve(req
         .get(me.address + method)
+        .agent(keepalive)
         .auth(me.username, me.password)
         .query(data)
     ).fail(function (err) {
@@ -88,6 +94,7 @@ function GET(me, method, data) {
 function GETbuffer(me, method, data) {
     return Q.resolve(req
         .get(me.address + method)
+        .agent(keepalive)
         .auth(me.username, me.password)
         .buffer(true).parse(req.parse.image) // necessary to have resp.body as a Buffer
         .query(data)
@@ -106,6 +113,7 @@ function GETbuffer(me, method, data) {
 function POST(me, method, data) {
     return Q.resolve(req
         .post(me.address + method)
+        .agent(keepalive)
         .auth(me.username, me.password)
         .type('form')
         .send(data)
@@ -122,6 +130,7 @@ function POST(me, method, data) {
 function documentPOST(me, method, data, document) {
     const r = req
         .post(me.address + method)
+        .agent(keepalive)
         .auth(me.username, me.password)
         .field(data);
     if (document)
