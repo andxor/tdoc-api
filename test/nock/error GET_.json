@@ -1,19 +1,15 @@
 [
     {
         "scope": "http://127.0.0.1:80",
-        "method": "POST",
-        "path": "/tdoc/api/docs/search",
-        "body": "doctype=File&meta=%7B%22%24dateIns%22%3A%7B%22%24gte%22%3A123456%2C%22%24lte%22%3A%222016-06-28%22%7D%7D&limit=7",
-        "status": 200,
+        "method": "GET",
+        "path": "/tdoc/api/docs/1234567890/meta",
+        "body": "",
+        "status": 500,
         "response": {
-            "documents": [
-                19533,
-                17279,
-                17277,
-                17275,
-                10564,
-                10562,
-                10560
+            "code": 231,
+            "message": "the document 1234567890 was not found in the database",
+            "additional": [
+                "1234567890"
             ]
         },
         "rawHeaders": [

@@ -5,19 +5,41 @@
         "path": "/tdoc/api/docs/search",
         "body": "doctype=File&meta=%7B%22%24dateIns%22%3A%7B%22%24gte%22%3A%222015-09-23%22%2C%22%24lte%22%3A%222015-09-24%22%7D%7D&limit=2&complete=1",
         "status": 200,
-        "response": [
-            "1f8b0800000000000000",
-            "3d90cb4ec33010457f05cd3a05bf63679757b7b08015b0b01297a479d84adc4aa5eabf33a1086f2ccfbd333e77aed0fae634b939ae90bd5fb757df424689542481d64607193042e58e981de30f546484659c3ebcbd96904067d70e0daa48e55ef3949a3aa7a432422b656a5355ba2c8d92b9ceb9e63265a949cba2a8f95ea4b9d69c13961752d71a271dfad1cd76dabe23789811e431b407541a3f053b5f507859fcd9620521e3256cd63d7661613ea1e5cb6104ca12086ee93d86d8b01358a38d2754202c6e75cbd9b5d830fa183dba854006aa0863822630f593fb1b6c4318fbc6c6decf1f4f778e6097c68da8f1c1a7f4b9fa96d306832d16f76421bbc2fdfedf17551b9bff0dd51dc7e1388cdd00b7dbe7ed07fdba6e2c77010000"
-        ],
-        "headers": {
-            "server": "Apache-Coyote/1.1",
-            "access-control-allow-origin": "*",
-            "vary": "Accept-Encoding",
-            "content-encoding": "gzip",
-            "content-type": "application/json;charset=UTF-8",
-            "transfer-encoding": "chunked",
-            "date": "Mon, 10 Oct 2016 15:32:24 GMT",
-            "connection": "close"
-        }
+        "response": {
+            "documents": [
+                {
+                    "docid": 10560,
+                    "date": "2015-09-23 14:02:31 UTC",
+                    "hash": "6B75F83719EA10D948669E9DD8CC965A8A383572797CBBE3F47A883302AB58E8",
+                    "filename": "00002940.pdf",
+                    "company": "Prova",
+                    "doctype": "File",
+                    "numpages": 12,
+                    "period": 2015,
+                    "status": "preserved",
+                    "lotto": 1443021602241,
+                    "mimetype": "application/pdf",
+                    "parcel": "3ko71ODz5ma",
+                    "metadata": {
+                        "data": "2015-09-16",
+                        "nome": "hjlkjklhk"
+                    }
+                }
+            ]
+        },
+        "rawHeaders": [
+            "Access-Control-Allow-Origin",
+            "*",
+            "Vary",
+            "Accept-Encoding",
+            "Content-Type",
+            "application/json;charset=UTF-8",
+            "Transfer-Encoding",
+            "chunked",
+            "Date",
+            "Mon, 30 Apr 2018 11:12:15 GMT",
+            "Connection",
+            "close"
+        ]
     }
 ]

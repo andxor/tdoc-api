@@ -3,7 +3,7 @@ const
     tapeNock = require('tape-nock'),
     crypto = require('crypto'),
     TDoc = require('../index'),
-    tdoc = new TDoc('http://127.0.0.1/tdoc/api/', 'l.luchini@andxor.it', 'Andxor01'),
+    tdoc = new TDoc('http://127.0.0.1/tdoc/api/', 'l.luchini@andxor.it', 'Password1'),
     testMode = (process.argv.length > 2 && process.argv[2] == 'local') ? 'lockdown' : 'record',
     test = tapeNock(tape, {
         fixtures: __dirname + '/nock/',
@@ -75,6 +75,7 @@ test('error GET', function (t) {
         e = e1;
     }).finally(function () {
         t.ok(e instanceof Error, 'should throw an Error');
+        t.equal(e.code, 231, 'should be a code 231 (document missing) error');
         t.end();
     });
 });
