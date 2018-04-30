@@ -81,7 +81,7 @@ function GET(me, method, data) {
         .agent(keepalive)
         .auth(me.username, me.password)
         .query(data)
-    ).fail(function (err) {
+    ).catch(function (err) {
         throw new TDoc.Error(method, err);
     }).then(function (resp) {
         const data = resp.body;
@@ -98,7 +98,7 @@ function GETbuffer(me, method, data) {
         .auth(me.username, me.password)
         .buffer(true).parse(req.parse.image) // necessary to have resp.body as a Buffer
         .query(data)
-    ).fail(function (err) {
+    ).catch(function (err) {
         throw new TDoc.Error(method, err);
     }).then(function (resp) {
         if ('etag' in resp.header) {
@@ -117,7 +117,7 @@ function POST(me, method, data) {
         .auth(me.username, me.password)
         .type('form')
         .send(data)
-    ).fail(function (err) {
+    ).catch(function (err) {
         throw new TDoc.Error(method, err);
     }).then(function (resp) {
         const data = resp.body;
@@ -136,7 +136,7 @@ function documentPOST(me, method, data, document) {
     if (document)
         r.attach('document', document);
     return Q.resolve(r
-    ).fail(function (err) {
+    ).catch(function (err) {
         throw new TDoc.Error(method, err);
     }).then(function (resp) {
         const data = resp.body;

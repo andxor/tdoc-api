@@ -35,7 +35,7 @@ test('search', function (t) {
         t.deepEqual(docs,
             [19533, 17279, 17277, 17275, 10564, 10562, 10560],
             'documents ids');
-    }).fail(function (err) {
+    }).catch(function (err) {
         t.fail(err);
     }).finally(function () {
         t.end();
@@ -48,7 +48,7 @@ test('searchOne', function (t) {
         meta: {$dateIns:{$gte:"2015-09-23",$lte:"2015-09-24"}}
     }).then(function (doc) {
         t.equal(doc.docid, 10560, 'single document');
-    }).fail(function (err) {
+    }).catch(function (err) {
         t.fail(err);
     }).finally(function () {
         t.end();
@@ -71,7 +71,7 @@ test('download', function (t) {
         }).then(function (xml) {
             t.ok(xml.indexOf(doc.hash) > 0, 'parcel contains document');
         });
-    }).fail(function (err) {
+    }).catch(function (err) {
         t.fail(err);
     }).finally(function () {
         t.end();
