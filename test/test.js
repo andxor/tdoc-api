@@ -14,6 +14,17 @@ function sha256(val) {
     return crypto.createHash('sha256').update(val).digest('hex');
 }
 
+function fixMultipart(scope) {
+    // depending on content, Nock returns it as plaintext or Base64 encoded, accept both
+    var separator = /----------------------------[0-9]{24}|2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d(3[0-9]){24}/g;
+    scope.filteringRequestBody(function (body, recorded) {
+        var sep = separator.exec(recorded);
+        if (sep)
+            return body.replace(separator, sep[0]);
+        return body;
+    });
+}
+
 test('search', function (t) {
     tdoc.search({
         doctype: 'File',
@@ -80,4 +91,48 @@ test('error GET', function (t) {
     });
 });
 
-//TODO 'error POST'
+test('upload', { after: fixMultipart }, function (t) {
+    let e = null;
+    tdoc.upload({
+        data: Buffer.from('test content'),
+        doctype: 'Prova44A',
+        period: 2014,
+        meta: {}
+    }).catch(function (e1) {
+        e = e1;
+    }).finally(function () {
+        t.ok(e instanceof Error, 'upload 1 should throw an Error');
+        t.equal(e.code, 68, 'upload 1 should give code 68 (missing metadata) error');
+    }).then(function () {
+        e = null;
+        return tdoc.upload({
+            data: Buffer.from('test content'),
+            doctype: 'Prova44A',
+            period: 2014,
+            meta: {
+                int1a: 1,
+                str1a: 'a',
+                data1a: '2017-12-31'
+            }
+        });
+    }).catch(function (e1) {
+        e = e1;
+    }).finally(function () {
+        t.ok(e == null, 'upload 2 should be OK');
+        if (e) console.log(e.message);
+    }).then(function () {
+        e = null;
+        return tdoc.upload({
+            file: 'does_not_exist.pdf',
+            doctype: 'Prova44A',
+            period: 2014,
+            meta: {}
+        });
+    }).catch(function (e1) {
+        e = e1;
+    }).finally(function () {
+        t.ok(e instanceof Error, 'upload 3 should throw an Error');
+        t.ok(e.message.startsWith('ENOENT:'), 'upload 3 should give file missing error');
+        t.end();
+    });
+});
