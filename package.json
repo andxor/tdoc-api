@@ -42,30 +42,12 @@
       "eslint:recommended"
     ],
     "rules": {
-      "strict": [
-        "error",
-        "global"
-      ],
-      "indent": [
-        "warn",
-        4
-      ],
-      "linebreak-style": [
-        "warn",
-        "unix"
-      ],
-      "quotes": [
-        "warn",
-        "single"
-      ],
-      "semi": [
-        "warn",
-        "always"
-      ],
-      "comma-dangle": [
-        "error",
-        "always-multiline"
-      ],
+      "strict": [ "error", "global" ],
+      "indent": [ "warn", 4 ],
+      "linebreak-style": [ "warn", "unix" ],
+      "quotes": [ "warn", "single" ],
+      "semi": [ "warn", "always" ],
+      "comma-dangle": [ "error", "always-multiline" ],
       "no-trailing-spaces": "warn",
       "no-unused-vars": "warn"
     }
