@@ -30,9 +30,12 @@ TDoc.Error = function (method, err) {
     this.method = method;
     this.status = 0|err.status;
     try {
+        //TODO: does this actually happen?
         if ('code' in err.response.body)
             err = err.response.body;
-    } catch (e) {}
+    } catch (e) {
+        // ignore
+    }
     this.code = 0|err.code;
     this.message = err.message;
     this.additional = err.additional || [];
@@ -84,7 +87,9 @@ function GET(me, method, data) {
     }).then(function (resp) {
         const data = resp.body;
         if (typeof data == 'object' && 'message' in data)
-            throw new TDoc.Error(method, data.code, data.message);
+            throw new TDoc.Error(method, resp);
+        if (resp.status >= 400)
+            throw new TDoc.Error(method, resp);
         return data;
     });
 }

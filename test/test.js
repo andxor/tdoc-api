@@ -1,3 +1,5 @@
+'use strict';
+
 const
     tape = require('tape'), // https://github.com/substack/tape
     tapeNock = require('tape-nock'),
@@ -7,7 +9,7 @@ const
     testMode = (process.argv.length > 2 && process.argv[2] == 'local') ? 'lockdown' : 'record',
     test = tapeNock(tape, {
         fixtures: __dirname + '/nock/',
-        mode: testMode
+        mode: testMode,
     });
 
 function sha256(val) {
@@ -57,16 +59,16 @@ test('searchOne', function (t) {
 
 test('download', function (t) {
     tdoc.documentMeta({
-        id: 17275
+        id: 17275,
     }).then(function (doc) {
         return tdoc.document({
-            id: 17275
+            id: 17275,
         }).then(function (bin) {
             t.ok(bin instanceof Buffer, 'data type');
             t.equal(bin.length, 887, 'data length');
             t.equal(sha256(bin), doc.hash.toLowerCase(), 'data hash');
             return tdoc.parcelXML({
-                id: doc.parcel
+                id: doc.parcel,
             });
         }).then(function (xml) {
             t.ok(xml.indexOf(doc.hash) > 0, 'parcel contains document');
@@ -81,7 +83,7 @@ test('download', function (t) {
 test('error GET', function (t) {
     let e = null;
     tdoc.documentMeta({
-        id: 1234567890
+        id: 1234567890,
     }).catch(function (e1) {
         e = e1;
     }).finally(function () {
@@ -97,7 +99,7 @@ test('upload', { after: fixMultipart }, function (t) {
         data: Buffer.from('test content'),
         doctype: 'Prova44A',
         period: 2014,
-        meta: {}
+        meta: {},
     }).catch(function (e1) {
         e = e1;
     }).finally(function () {
@@ -112,8 +114,8 @@ test('upload', { after: fixMultipart }, function (t) {
             meta: {
                 int1a: 1,
                 str1a: 'a',
-                data1a: '2017-12-31'
-            }
+                data1a: '2017-12-31',
+            },
         });
     }).catch(function (e1) {
         e = e1;
