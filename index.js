@@ -212,9 +212,9 @@ function update(me, p) {
 
 function updateMeta(me, p) {
     const data = {
-            meta: p.meta,
-            value: p.value,
-        };
+        meta: p.meta,
+        value: p.value,
+    };
     if (p.user) data.user = p.user;
     if (p.company) data.company = p.company;
     return POST(me, 'docs/' + (0|p.id) + '/meta/update', data).then(massageDoc);
@@ -222,9 +222,9 @@ function updateMeta(me, p) {
 
 function search(me, p) {
     const data = {
-            doctype: p.doctype,
-            meta: JSON.stringify(p.meta)
-        };
+        doctype: p.doctype,
+        meta: JSON.stringify(p.meta),
+    };
     if (p.user) data.user = p.user;
     if (p.company) data.company = p.company;
     if (p.period) data.period = forceNumber(p.period);
@@ -277,10 +277,10 @@ function searchOne(me, p) {
 
 function parcelCreate(me, p) {
     const data = {
-            company: p.company,
-            doctype: p.doctype,
-            filename: p.filename,
-        };
+        company: p.company,
+        doctype: p.doctype,
+        filename: p.filename,
+    };
     if (p.user) data.user = p.user;
     return parcelPOST(me, 'docs/parcel/create', data);
 }
