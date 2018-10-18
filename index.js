@@ -12,7 +12,8 @@ const
         keepAlive: true, // keep alive connections for reuse
         keepAliveMsecs: 5000, // for up to 5 seconds
         maxSockets: 4, // do not use more than 4 parallel connections
-    });
+    }),
+    reEtag = /^"([0-9A-F]+)[-"]/;
 
 function TDoc(address, username, password) {
     this.address = address.replace(/\/?$/, '/'); // check that it includes the trailing slash
@@ -105,9 +106,14 @@ function GETbuffer(me, method, data) {
         throw new TDoc.Error(method, err);
     }).then(function (resp) {
         if ('etag' in resp.header) {
-            const h = crypto.createHash('sha256').update(resp.body).digest('hex').toUpperCase();
-            if (resp.header.etag.indexOf(h) != 1)
-                throw new Error('Hash value mismatch.');
+            const m = reEtag.exec(resp.header.etag);
+            if (m) {
+                const declared = m[1];
+                const algo = declared.length < 64 ? 'sha1' : 'sha256';
+                const calc = crypto.createHash(algo).update(resp.body).digest('hex').toUpperCase();
+                if (calc != declared)
+                    throw new Error('Hash value mismatch.');
+            }
         }
         return resp.body;
     });
