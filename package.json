@@ -1,6 +1,6 @@
 {
   "name": "tdoc-api",
-  "version": "0.4.6",
+  "version": "0.4.7",
   "description": "Wrapper around tDoc REST-ful APIs",
   "main": "index.js",
   "homepage": "https://github.com/andxor/tdoc-api",
@@ -16,12 +16,12 @@
   },
   "dependencies": {
     "bluebird": "^3.5.1",
-    "superagent": "^3.8.3"
+    "superagent": "^4.1.0"
   },
   "devDependencies": {
-    "tap-spec": "^4.1.1",
-    "tape": "^4.9.0",
-    "tape-nock": "^1.6.0"
+    "tap-spec": "^5.0.0",
+    "tape": "^4.9.2",
+    "tape-nock": "^1.6.1"
   },
   "files": [
     "index.js",
