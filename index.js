@@ -1,6 +1,6 @@
 /*!
  * node tDoc API wrapper
- * (c) 2014-2018 Lapo Luchini <l.luchini@andxor.it>
+ * (c) 2014-2019 Lapo Luchini <l.luchini@andxor.it>
  */
 'use strict';
 
