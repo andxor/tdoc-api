@@ -23,6 +23,7 @@ function TDoc(address, username, password) {
         keepAliveMsecs: 5000, // for up to 5 seconds
         maxSockets: 4, // do not use more than 4 parallel connections
     });
+    this.token = login(this, {verifyIP: true});
 }
 
 TDoc.Promise = Q;
@@ -81,7 +82,61 @@ function massageDoctype(doctypes) {
     return doctypes;
 }
 
+function loginAndGET(me, method, data, wantBuffer) {
+    return Q.resolve(
+        me.token = login(me, {verifyIP: true})
+    ).then (function() {
+        var request = req
+            .get(me.address + method)
+            .agent(me.agent);
+        if (wantBuffer)
+            request.buffer(true).parse(req.parse.image); // necessary to have resp.body as a Buffer            
+        return Q.resolve(
+            me.token
+        ).then(function (jwt) {
+            request.set('Authorization', 'Bearer ' + jwt);
+            return request.query(data)
+        }).catch(function (err) {
+            throw new TDoc.Error(method, err);
+        });
+    });
+}
+
 function GET(me, method, data) {
+    var request = req
+        .get(me.address + method)
+        .agent(me.agent);
+    return Q.resolve(
+        me.token
+    ).then(function (jwt) {
+        if (jwt) {
+            request.set('Authorization', 'Bearer ' + jwt);
+        } else {
+            request.auth(me.username, me.password)
+        }
+        return request.query(data)
+    }).catch(function (err) {
+        if ( err.response && err.response.body ) {
+            const errCode = err.response.body.code;
+            const errMessage = err.response.body.message;
+            if (errCode == 338 /* Basic Authentication disabled  */) {
+                return loginAndGET(me, method, data, false);
+            } else if ( errCode == 337 /* Token expired */ ) {
+                return loginAndGET(me, method, data, false);
+            }
+        }
+        throw new TDoc.Error(method, err);
+    }).then(function (resp) {
+        const data = resp.body;
+        if (typeof data == 'object' && 'message' in data)
+            throw new TDoc.Error(method, resp);
+        if (resp.status >= 400)
+            throw new TDoc.Error(method, resp);
+        return data;
+    });
+}
+
+function basicGET(me, method, data) {
     return Q.resolve(req
         .get(me.address + method)
         .agent(me.agent)
@@ -100,13 +155,29 @@ function GET(me, method, data) {
 }
 
 function GETbuffer(me, method, data) {
-    return Q.resolve(req
+    var request = req
         .get(me.address + method)
         .agent(me.agent)
-        .auth(me.username, me.password)
-        .buffer(true).parse(req.parse.image) // necessary to have resp.body as a Buffer
-        .query(data)
-    ).catch(function (err) {
+        .buffer(true).parse(req.parse.image); // necessary to have resp.body as a Buffer
+    return Q.resolve(
+        me.token
+    ).then(function (jwt) {
+        if (jwt) {
+            request.set('Authorization', 'Bearer ' + jwt);
+        } else {
+            request.auth(me.username, me.password)
+        }
+        return request.query(data)
+    }).catch(function (err) {
+        if ( err.response && err.response.body ) {
+            const errBody = JSON.parse(err.response.body.toString('utf-8'));
+            const errCode = errBody.code;
+            if (errCode == 338 /* Basic Authentication disabled  */) {
+                return loginAndGET(me, method, data, true);
+            } else if ( errCode == 337 /* Token expired */ ) {
+                return loginAndGET(me, method, data, true);
+            }
+        }
         throw new TDoc.Error(method, err);
     }).then(function (resp) {
         if ('etag' in resp.header) {
@@ -123,14 +194,51 @@ function GETbuffer(me, method, data) {
     });
 }
 
+function loginAndPOST(me, method, data) {
+    return Q.resolve(
+        me.token = login(me, {verifyIP: true})
+    ).then (function() {
+        //return POST(me, method, data)
+        var request = req
+            .post(me.address + method)
+            .agent(me.agent)
+            .type('form');
+        return Q.resolve(
+            me.token
+        ).then(function (jwt) {
+            request.set('Authorization', 'Bearer ' + jwt);
+            return request.send(data)
+        }).catch(function (err) {
+            throw new TDoc.Error(method, err);
+        });
+    });
+}
+
 function POST(me, method, data) {
-    return Q.resolve(req
+    var request = req
         .post(me.address + method)
         .agent(me.agent)
-        .auth(me.username, me.password)
-        .type('form')
-        .send(data)
-    ).catch(function (err) {
+        .type('form');
+    return Q.resolve(
+        me.token
+    ).then(function (jwt) {
+        if (jwt) {
+            request.set('Authorization', 'Bearer ' + jwt);
+        } else {
+            request.auth(me.username, me.password)
+        }
+        return request
+            .send(data)
+    }).catch(function (err) {
+        if ( err.response && err.response.body ) {
+            const errCode = err.response.body.code;
+            const errMessage = err.response.body.message;
+            if (errCode == 338 /* Basic Authentication disabled  */) {
+                return loginAndPOST(me, method, data);
+            } else if ( errCode == 337 /* Token expired */ ) {
+                return loginAndPOST(me, method, data);
+            }
+        }
         throw new TDoc.Error(method, err);
     }).then(function (resp) {
         const data = resp.body;
@@ -199,6 +307,23 @@ function commonUploadParams(p) {
     if ('ready' in p) // as missing value is truthy
         s.ready = p.ready ? 1 : 0;
     return s;
+}
+
+function login(me, p) {
+    const data = {};
+    if (p.company) data.company = p.company;
+    if (p.verifyIP) data.verifyIP = true;
+    return basicGET(me, 'login', data).then(function (resp) {
+        if (typeof resp == 'object' && 'jwt' in resp) {
+            return resp.jwt;
+        }
+        throw new Error('Unexpected return value: ' + JSON.stringify(resp));
+    }).catch(function (err) {
+        if (err.message.includes('Not Found')) {
+            me.token = null;
+        } else
+            throw new Error(err);
+    });
 }
 
 function upload(me, p) {
