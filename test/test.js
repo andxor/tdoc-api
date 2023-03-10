@@ -31,88 +31,65 @@ function fixMultipart(scope) {
     });
 }
 
-test('search', function (t) {
-    tdoc.search({
+test('search', async t => {
+    const docs = await tdoc.search({
         doctype: 'File',
         limit: 7,
-        meta: {$dateIns:{$gte:"2022-09-13",$lt:"2022-09-14"}}
-    }).then(function (docs) {
-        t.equal(docs.length, 7, 'number of documents found');
-        t.deepEqual(docs,
-            [297829, 297828, 297827, 297826, 297825, 297824, 297823],
-            'documents ids');
-    }).catch(function (err) {
-        t.fail(err);
-    }).finally(function () {
-        t.end();
+        meta: {$dateIns:{$gte:'2022-09-13',$lt:'2022-09-14'}},
     });
+    t.equal(docs.length, 7, 'number of documents found');
+    t.deepEqual(docs,
+        [297829, 297828, 297827, 297826, 297825, 297824, 297823],
+        'documents ids');
 });
 
-test('searchOne', function (t) {
-    tdoc.searchOne({
+test('searchOne', async t => {
+    const doc = await tdoc.searchOne({
         doctype: 'File',
-        meta: {"Numero documento": "Xox1w6eZAx"}
-    }).then(function (doc) {
-        t.equal(doc.docid, 297884, 'single document');
-    }).catch(function (err) {
-        t.fail(err);
-    }).finally(function () {
-        t.end();
+        meta: {'Numero documento': 'Xox1w6eZAx'},
     });
+    t.equal(doc.docid, 297884, 'single document');
 });
 
-test('download', function (t) {
-    tdoc.documentMeta({
-        id: 297884,
-    }).then(function (doc) {
-        return tdoc.document({
-            id: 297884,
-        }).then(function (bin) {
-            t.ok(bin instanceof Buffer, 'data type');
-            t.equal(bin.length, 994, 'data length');
-            t.equal(sha256(bin), doc.hash.toLowerCase(), 'data hash');
-            return tdoc.parcelXML({
-                id: doc.parcel,
-            });
-        }).then(function (xml) {
-            t.ok(xml.indexOf(doc.hash) > 0, 'parcel contains document');
+test('download', async t => {
+    const doc = await tdoc.documentMeta({ id: 297884 });
+    const bin = await tdoc.document({ id: 297884 });
+    t.ok(bin instanceof Buffer, 'data type');
+    t.equal(bin.length, 994, 'data length');
+    t.equal(sha256(bin), doc.hash.toLowerCase(), 'data hash');
+    const xml = await tdoc.parcelXML({ id: doc.parcel });
+    t.ok(xml.indexOf(doc.hash) > 0, 'parcel contains document');
+});
+
+test('error GET', async t => {
+    let e = null;
+    try {
+        await tdoc.documentMeta({ id: 1234567890 });
+    } catch (e1) {
+        e = e1;
+    }
+    t.ok(e instanceof Error, 'should throw an Error');
+    t.equal(e.code, 231, 'should be a code 231 (document missing) error');
+});
+
+test('upload', { after: fixMultipart }, async t => {
+    let e = null;
+    try {
+        await tdoc.upload({
+            data: Buffer.from('test content'),
+            doctype: 'File',
+            period: 2023,
+            meta: {},
         });
-    }).catch(function (err) {
-        t.fail(err);
-    }).finally(function () {
-        t.end();
-    });
-});
-
-test('error GET', function (t) {
-    let e = null;
-    tdoc.documentMeta({
-        id: 1234567890,
-    }).catch(function (e1) {
-        e = e1;
-    }).finally(function () {
-        t.ok(e instanceof Error, 'should throw an Error');
-        t.equal(e.code, 231, 'should be a code 231 (document missing) error');
-        t.end();
-    });
-});
-
-test('upload', { after: fixMultipart }, function (t) {
-    let e = null;
-    tdoc.upload({
-        data: Buffer.from('test content'),
-        doctype: 'File',
-        period: 2023,
-        meta: {},
-    }).catch(function (e1) {
-        e = e1;
-    }).finally(function () {
-        t.ok(e instanceof Error, 'upload 1 should throw an Error');
-        t.equal(e.code, 68, 'upload 1 should give code 68 (missing metadata) error');
-    }).then(function () {
-        e = null;
-        const random = crypto.randomBytes(8).toString('hex');
-        return tdoc.upload({
+    } catch (error) {
+        e = error;
+    }
+    t.ok(e instanceof Error, 'upload 1 should throw an Error');
+    t.equal(e.code, 68, 'upload 1 should give code 68 (missing metadata) error');
+    e = null;
+    const random = crypto.randomBytes(8).toString('hex');
+    try {
+        await tdoc.upload({
             data: Buffer.from('test content'),
             doctype: 'File',
             period: 2023,
@@ -122,24 +99,22 @@ test('upload', { after: fixMultipart }, function (t) {
                 'Nome file': random + '.txt',
             },
         });
-    }).catch(function (e1) {
-        e = e1;
-    }).finally(function () {
-        t.ok(e == null, 'upload 2 should be OK');
-        if (e) console.log(e.message);
-    }).then(function () {
-        e = null;
-        return tdoc.upload({
+    } catch (error) {
+        e = error;
+    }
+    t.ok(e == null, 'upload 2 should be OK');
+    if (e) console.log(e.message);
+    e = null;
+    try {
+        await tdoc.upload({
             file: 'does_not_exist.pdf',
             doctype: 'File',
             period: 2023,
-            meta: {}
+            meta: {},
         });
-    }).catch(function (e1) {
-        e = e1;
-    }).finally(function () {
-        t.ok(e instanceof Error, 'upload 3 should throw an Error');
-        t.ok(e.message.startsWith('ENOENT:'), 'upload 3 should give file missing error');
-        t.end();
-    });
+    } catch (error) {
+        e = error;
+    }
+    t.ok(e instanceof Error, 'upload 3 should throw an Error');
+    t.ok(e.message.startsWith('ENOENT:'), 'upload 3 should give file missing error');
 });

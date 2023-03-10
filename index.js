@@ -14,12 +14,10 @@ const
 
 function gunzip(data) {
     return new Promise((resolve, reject) => {
-        const chunks = [];
-        zlib.createGunzip()
-            .on('error', reject)
-            .on('data', chunk => chunks.push(chunk))
-            .on('end', () => resolve(Buffer.concat(chunks)))
-            .end(data);
+        zlib.gunzip(data, (error, result) => {
+            if(!error) resolve(result);
+            else reject(error);
+        });
     });
 }
 
@@ -110,7 +108,7 @@ class TDoc {
             req.set('Authorization', 'Bearer ' + jwt);
         else
             req.auth(this.#username, this.#password);
-    };
+    }
 
     async #loginAndGET(method, data, wantBuffer) {
         const request = req
@@ -178,7 +176,7 @@ class TDoc {
             .buffer(true).parse(req.parse.image); // necessary to have resp.body as a Buffer
         await this.#addAuth(request);
         try {
-            const resp = await request.query(data)
+            const resp = await request.query(data);
             if ('etag' in resp.header) {
                 const m = reEtag.exec(resp.header.etag);
                 if (m) {
@@ -224,7 +222,7 @@ class TDoc {
             .type('form');
         await this.#addAuth(request);
         try {
-            const resp = await request.send(data)
+            const resp = await request.send(data);
             data = resp.body;
             if (typeof data == 'object' && 'message' in data)
                 throw new TDocError(method, data.code, data.message);
