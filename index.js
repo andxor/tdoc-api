@@ -6,10 +6,23 @@
 
 const
     crypto = require('crypto'),
+    zlib = require('zlib'),
     Q = require('./lib/promise'), // we're currently using Bluebird, but Q is a shorter name
     req = require('superagent'),
+    CMS = require('@lapo/extractcms'),
     reProto = /^(https?):/,
     reEtag = /^"([0-9A-F]+)[-"]/;
+
+function gunzip(data) {
+    return new Promise((resolve, reject) => {
+        const chunks = [];
+        zlib.createGunzip()
+            .on('error', reject)
+            .on('data', chunk => chunks.push(chunk))
+            .on('end', () => resolve(Buffer.concat(chunks)))
+            .end(data);
+    });
+}
 
 function TDoc(address, username, password) {
     this.address = address.replace(/\/?$/, '/'); // check that it includes the trailing slash
@@ -445,7 +458,13 @@ function parcelXML(me, p) {
     const data = {};
     if (p.user) data.user = p.user;
     if (p.company) data.company = p.company;
-    return GETbuffer(me, 'docs/parcel/' + p.id + '.xml', data);
+    return GETbuffer(me, 'docs/parcel/' + p.id + '.xml', data).then(xml => {
+        if (xml[0] != 0x30)
+            return xml; // old format, pure XML
+        // new format, signed and gzipped
+        xml = CMS.extract(xml);
+        return gunzip(xml);
+    });
 }
 
 function companyList(me, p) {
