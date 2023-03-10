@@ -7,7 +7,6 @@
 const
     crypto = require('crypto'),
     zlib = require('zlib'),
-    Q = require('./lib/promise'), // we're currently using Bluebird, but Q is a shorter name
     req = require('superagent'),
     CMS = require('@lapo/extractcms'),
     reProto = /^(https?):/,
@@ -24,273 +23,8 @@ function gunzip(data) {
     });
 }
 
-function TDoc(address, username, password) {
-    this.address = address.replace(/\/?$/, '/'); // check that it includes the trailing slash
-    this.username = username;
-    this.password = password;
-    const proto = reProto.exec(address);
-    if (!proto)
-        throw new Error('Unsupported protocol.');
-    this.agent = new (require(proto[1])).Agent({
-        keepAlive: true, // keep alive connections for reuse
-        keepAliveMsecs: 5000, // for up to 5 seconds
-        maxSockets: 4, // do not use more than 4 parallel connections
-    });
-    this.token = login(this, {verifyIP: true});
-}
-
-TDoc.Promise = Q;
-
-TDoc.Error = function (method, err) {
-    // inspired by: http://stackoverflow.com/a/8460753/166524
-    if ('captureStackTrace' in Error)
-        Error.captureStackTrace(this, this.constructor);
-    this.name = 'TDoc.Error';
-    this.method = method;
-    this.status = 0|err.status;
-    try {
-        //TODO: does this actually happen?
-        if ('code' in err.response.body)
-            err = err.response.body;
-    } catch (e) {
-        // ignore
-    }
-    this.code = 0|err.code;
-    this.message = err.message;
-    this.additional = err.additional || [];
-};
-TDoc.Error.prototype = Object.create(Error.prototype);
-TDoc.Error.prototype.constructor = TDoc.Error;
-
-TDoc.longStack = function (val) {
-    if (!val)
-        console.log('WARNING: long stack traces are always enabled since version 0.2.0');
-};
-
 function forceNumber(n) {
     return +n;
-}
-
-function nameValue2Object(arr) {
-    const o = {};
-    arr.forEach(function (e) {
-        o[e.name] = e.value;
-    });
-    return o;
-}
-
-function massageDoc(doc) {
-    if (Array.isArray(doc.metadata)) { // old format, used up to tDoc r13584
-        doc.lotto = +doc.lotto;
-        doc.metadata = nameValue2Object(doc.metadata);
-    }
-    return doc;
-}
-
-function massageDoctype(doctypes) {
-    doctypes.forEach(function (dt) {
-        if (typeof dt.custom == 'string') // tDoc r14171 returns it as a string, but will change in the future
-            dt.custom = JSON.parse(dt.custom);
-    });
-    return doctypes;
-}
-
-function loginAndGET(me, method, data, wantBuffer) {
-    return Q.resolve(
-        me.token = login(me, {verifyIP: true})
-    ).then (function() {
-        var request = req
-            .get(me.address + method)
-            .agent(me.agent);
-        if (wantBuffer)
-            request.buffer(true).parse(req.parse.image); // necessary to have resp.body as a Buffer            
-        return Q.resolve(
-            me.token
-        ).then(function (jwt) {
-            request.set('Authorization', 'Bearer ' + jwt);
-            return request.query(data)
-        }).catch(function (err) {
-            throw new TDoc.Error(method, err);
-        });
-    });
-}
-
-function GET(me, method, data) {
-    var request = req
-        .get(me.address + method)
-        .agent(me.agent);
-    return Q.resolve(
-        me.token
-    ).then(function (jwt) {
-        if (jwt) {
-            request.set('Authorization', 'Bearer ' + jwt);
-        } else {
-            request.auth(me.username, me.password)
-        }
-        return request.query(data)
-    }).catch(function (err) {
-        if ( err.response && err.response.body ) {
-            const errCode = err.response.body.code;
-            const errMessage = err.response.body.message;
-            if (errCode == 338 /* Basic Authentication disabled  */) {
-                return loginAndGET(me, method, data, false);
-            } else if ( errCode == 337 /* Token expired */ ) {
-                return loginAndGET(me, method, data, false);
-            }
-        }
-        throw new TDoc.Error(method, err);
-    }).then(function (resp) {
-        const data = resp.body;
-        if (typeof data == 'object' && 'message' in data)
-            throw new TDoc.Error(method, resp);
-        if (resp.status >= 400)
-            throw new TDoc.Error(method, resp);
-        return data;
-    });
-}
-
-function basicGET(me, method, data) {
-    return Q.resolve(req
-        .get(me.address + method)
-        .agent(me.agent)
-        .auth(me.username, me.password)
-        .query(data)
-    ).catch(function (err) {
-        throw new TDoc.Error(method, err);
-    }).then(function (resp) {
-        const data = resp.body;
-        if (typeof data == 'object' && 'message' in data)
-            throw new TDoc.Error(method, resp);
-        if (resp.status >= 400)
-            throw new TDoc.Error(method, resp);
-        return data;
-    });
-}
-
-function GETbuffer(me, method, data) {
-    var request = req
-        .get(me.address + method)
-        .agent(me.agent)
-        .buffer(true).parse(req.parse.image); // necessary to have resp.body as a Buffer
-    return Q.resolve(
-        me.token
-    ).then(function (jwt) {
-        if (jwt) {
-            request.set('Authorization', 'Bearer ' + jwt);
-        } else {
-            request.auth(me.username, me.password)
-        }
-        return request.query(data)
-    }).catch(function (err) {
-        if ( err.response && err.response.body ) {
-            const errBody = JSON.parse(err.response.body.toString('utf-8'));
-            const errCode = errBody.code;
-            if (errCode == 338 /* Basic Authentication disabled  */) {
-                return loginAndGET(me, method, data, true);
-            } else if ( errCode == 337 /* Token expired */ ) {
-                return loginAndGET(me, method, data, true);
-            }
-        }
-        throw new TDoc.Error(method, err);
-    }).then(function (resp) {
-        if ('etag' in resp.header) {
-            const m = reEtag.exec(resp.header.etag);
-            if (m) {
-                const declared = m[1];
-                const algo = declared.length < 64 ? 'sha1' : 'sha256';
-                const calc = crypto.createHash(algo).update(resp.body).digest('hex').toUpperCase();
-                if (calc != declared)
-                    throw new Error('Hash value mismatch.');
-            }
-        }
-        return resp.body;
-    });
-}
-
-function loginAndPOST(me, method, data) {
-    return Q.resolve(
-        me.token = login(me, {verifyIP: true})
-    ).then (function() {
-        //return POST(me, method, data)
-        var request = req
-            .post(me.address + method)
-            .agent(me.agent)
-            .type('form');
-        return Q.resolve(
-            me.token
-        ).then(function (jwt) {
-            request.set('Authorization', 'Bearer ' + jwt);
-            return request.send(data)
-        }).catch(function (err) {
-            throw new TDoc.Error(method, err);
-        });
-    });
-}
-
-function POST(me, method, data) {
-    var request = req
-        .post(me.address + method)
-        .agent(me.agent)
-        .type('form');
-    return Q.resolve(
-        me.token
-    ).then(function (jwt) {
-        if (jwt) {
-            request.set('Authorization', 'Bearer ' + jwt);
-        } else {
-            request.auth(me.username, me.password)
-        }
-        return request
-            .send(data)
-    }).catch(function (err) {
-        if ( err.response && err.response.body ) {
-            const errCode = err.response.body.code;
-            const errMessage = err.response.body.message;
-            if (errCode == 338 /* Basic Authentication disabled  */) {
-                return loginAndPOST(me, method, data);
-            } else if ( errCode == 337 /* Token expired */ ) {
-                return loginAndPOST(me, method, data);
-            }
-        }
-        throw new TDoc.Error(method, err);
-    }).then(function (resp) {
-        const data = resp.body;
-        if (typeof data == 'object' && 'message' in data)
-            throw new TDoc.Error(method, data.code, data.message);
-        return data;
-    });
-}
-
-function documentPOST(me, method, data, document) {
-    const r = req
-        .post(me.address + method)
-        .agent(me.agent)
-        .auth(me.username, me.password)
-        .field(data);
-    if (document)
-        r.attach('document', document);
-    return Q.resolve(r
-    ).catch(function (err) {
-        throw new TDoc.Error(method, err);
-    }).then(function (resp) {
-        const data = resp.body;
-        if (typeof data == 'object' && 'message' in data)
-            throw new TDoc.Error(method, data.code, data.message);
-        if (typeof data == 'object' && 'document' in data) {
-            if ('warning' in data)
-                data.document.warning = { message: data.warning.shift(), extra: data.warning };
-            return massageDoc(data.document);
-        }
-        throw new Error('Unexpected return value: ' + JSON.stringify(data));
-    });
-}
-
-function parcelPOST(me, method, data) {
-    return POST(me, method, data).then(function (data) {
-        if (typeof data == 'object' && 'parcel' in data)
-            return data.parcel;
-        throw new Error('Unexpected return value: ' + JSON.stringify(data));
-    });
 }
 
 function commonUploadParams(p) {
@@ -322,197 +56,410 @@ function commonUploadParams(p) {
     return s;
 }
 
-function login(me, p) {
-    const data = {};
-    if (p.company) data.company = p.company;
-    if (p.verifyIP) data.verifyIP = true;
-    return basicGET(me, 'login', data).then(function (resp) {
-        if (typeof resp == 'object' && 'jwt' in resp) {
-            return resp.jwt;
+function nameValue2Object(arr) {
+    const o = {};
+    arr.forEach(function (e) {
+        o[e.name] = e.value;
+    });
+    return o;
+}
+
+function massageDoc(doc) {
+    if (Array.isArray(doc.metadata)) { // old format, used up to tDoc r13584
+        doc.lotto = +doc.lotto;
+        doc.metadata = nameValue2Object(doc.metadata);
+    }
+    return doc;
+}
+
+function massageDoctype(doctypes) {
+    doctypes.forEach(function (dt) {
+        if (typeof dt.custom == 'string') // tDoc r14171 returns it as a string, but will change in the future
+            dt.custom = JSON.parse(dt.custom);
+    });
+    return doctypes;
+}
+
+
+class TDoc {
+    #address;
+    #username;
+    #password;
+    #agent;
+    #token;
+
+    constructor(address, username, password) {
+        this.#address = address.replace(/\/?$/, '/'); // check that it includes the trailing slash
+        this.#username = username;
+        this.#password = password;
+        const proto = reProto.exec(address);
+        if (!proto)
+            throw new TDocError('Unsupported protocol.');
+        this.#agent = new (require(proto[1])).Agent({
+            keepAlive: true, // keep alive connections for reuse
+            keepAliveMsecs: 5000, // for up to 5 seconds
+            maxSockets: 4, // do not use more than 4 parallel connections
+        });
+    }
+
+    async #addAuth(req) {
+        if (!this.token)
+            this.token = this.#login({ verifyIP: true });
+        const jwt = await this.token;
+        if (jwt)
+            req.set('Authorization', 'Bearer ' + jwt);
+        else
+            req.auth(this.#username, this.#password);
+    };
+
+    async #loginAndGET(method, data, wantBuffer) {
+        const request = req
+            .get(this.#address + method)
+            .agent(this.#agent);
+        if (wantBuffer)
+            request.buffer(true).parse(req.parse.image); // necessary to have resp.body as a Buffer
+        await this.#addAuth(request);
+        try {
+            return await request.query(data);
+        } catch(err) {
+            throw new TDocError(method, err);
         }
-        throw new Error('Unexpected return value: ' + JSON.stringify(resp));
-    }).catch(function (err) {
-        if (err.message.includes('Not Found')) {
-            me.token = null;
-        } else
-            throw new Error(err);
-    });
-}
+    }
 
-function upload(me, p) {
-    if (!p.doctype)
-        return Q.reject(new Error('you need to specify ‘doctype’'));
-    if (!p.period)
-        return Q.reject(new Error('you need to specify ‘period’'));
-    if (!p.meta && p.ready)
-        return Q.reject(new Error('if the document is ‘ready’ it must contain ‘meta’'));
-    if (p.ready && (!p.file && !p.data))
-        return Q.reject(new Error('if the document is ‘ready’ it must have a content as either ‘file’ or ‘data’'));
-    const s = commonUploadParams(p);
-    s.doctype = p.doctype;
-    return documentPOST(me, 'docs/upload', s, p.file || p.data);
-}
+    async #GET(method, data) {
+        const request = req
+            .get(this.#address + method)
+            .agent(this.#agent);
+        await this.#addAuth(request);
+        try {
+            const resp = await request.query(data);
+            data = resp.body;
+            if (typeof data == 'object' && 'message' in data)
+                throw new TDocError(method, resp);
+            if (resp.status >= 400)
+                throw new TDocError(method, resp);
+            return data;
+        } catch(err) {
+            if ( err.response && err.response.body ) {
+                const errCode = err.response.body.code;
+                const errMessage = err.response.body.message;
+                if (errCode == 338 /* Basic Authentication disabled  */) {
+                    return this.#loginAndGET(this, method, data, false);
+                } else if ( errCode == 337 /* Token expired */ ) {
+                    return this.#loginAndGET(this, method, data, false);
+                }
+            }
+            throw new TDocError(method, err);
+        }
+    }
 
-function update(me, p) {
-    const s = commonUploadParams(p);
-    return documentPOST(me, 'docs/update', s, p.file || p.data);
-}
+    async #basicGET(method, data) {
+        try {
+            const resp = await req
+                .get(this.#address + method)
+                .agent(this.#agent)
+                .auth(this.#username, this.#password)
+                .query(data);
+            data = resp.body;
+            if (typeof data == 'object' && 'message' in data)
+                throw new TDocError(method, resp);
+            if (resp.status >= 400)
+                throw new TDocError(method, resp);
+            return data;
+        } catch(err) {
+            throw new TDocError(method, err);
+        }
+    }
 
-function updateMeta(me, p) {
-    const data = {
-        meta: p.meta,
-        value: p.value,
-    };
-    if (p.user) data.user = p.user;
-    if (p.company) data.company = p.company;
-    return POST(me, 'docs/' + (0|p.id) + '/meta/update', data).then(massageDoc);
-}
+    async #GETbuffer(method, data) {
+        const request = req
+            .get(this.#address + method)
+            .agent(this.#agent)
+            .buffer(true).parse(req.parse.image); // necessary to have resp.body as a Buffer
+        await this.#addAuth(request);
+        try {
+            const resp = await request.query(data)
+            if ('etag' in resp.header) {
+                const m = reEtag.exec(resp.header.etag);
+                if (m) {
+                    const declared = m[1];
+                    const algo = declared.length < 64 ? 'sha1' : 'sha256';
+                    const calc = crypto.createHash(algo).update(resp.body).digest('hex').toUpperCase();
+                    if (calc != declared)
+                        throw new Error('Hash value mismatch.');
+                }
+            }
+            return resp.body;
+        } catch(err) {
+            if ( err.response && err.response.body ) {
+                const errBody = JSON.parse(err.response.body.toString('utf-8'));
+                const errCode = errBody.code;
+                if (errCode == 338 /* Basic Authentication disabled  */) {
+                    return this.#loginAndGET(this, method, data, true);
+                } else if ( errCode == 337 /* Token expired */ ) {
+                    return this.#loginAndGET(this, method, data, true);
+                }
+            }
+            throw new TDocError(method, err);
+        }
+    }
 
-function search(me, p) {
-    const data = {
-        doctype: p.doctype,
-        meta: JSON.stringify(p.meta),
-    };
-    if (p.user) data.user = p.user;
-    if (p.company) data.company = p.company;
-    if (p.period) data.period = forceNumber(p.period);
-    if (p.limit) data.limit = forceNumber(p.limit);
-    if (p.complete) data.complete = 1;
-    return POST(me, 'docs/search', data).then(function (data) {
-        if (typeof data == 'object' && 'documents' in data)
-            return data.documents;
+    async #loginAndPOST(method, data) {
+        const request = req
+            .post(this.#address + method)
+            .agent(this.#agent)
+            .type('form');
+        await this.#addAuth(request);
+        try {
+            return await request.send(data);
+        } catch(err) {
+            throw new TDocError(method, err);
+        }
+    }
+
+    async #POST(method, data) {
+        const request = req
+            .post(this.#address + method)
+            .agent(this.#agent)
+            .type('form');
+        await this.#addAuth(request);
+        try {
+            const resp = await request.send(data)
+            data = resp.body;
+            if (typeof data == 'object' && 'message' in data)
+                throw new TDocError(method, data.code, data.message);
+            return data;
+        } catch(err) {
+            if ( err.response && err.response.body ) {
+                const errCode = err.response.body.code;
+                const errMessage = err.response.body.message;
+                if (errCode == 338 /* Basic Authentication disabled  */) {
+                    return this.#loginAndPOST(this, method, data);
+                } else if ( errCode == 337 /* Token expired */ ) {
+                    return this.#loginAndPOST(this, method, data);
+                }
+            }
+            throw new TDocError(method, err);
+        }
+    }
+
+    async #documentPOST(method, data, document) {
+        const request = req
+            .post(this.#address + method)
+            .agent(this.#agent)
+            .auth(this.#username, this.#password)
+            .field(data);
+        await this.#addAuth(request);
+        if (document)
+            request.attach('document', document);
+        try {
+            const resp = await request;
+            data = resp.body;
+            if (typeof data == 'object' && 'message' in data)
+                throw new TDocError(method, data.code, data.message);
+            if (typeof data == 'object' && 'document' in data) {
+                if ('warning' in data)
+                    data.document.warning = { message: data.warning.shift(), extra: data.warning };
+                return massageDoc(data.document);
+            }
+            throw new Error('Unexpected return value (document): ' + JSON.stringify(data));
+        } catch(err) {
+            throw new TDocError(method, err);
+        }
+    }
+
+    async #parcelPOST(method, data) {
+        const resp = this.#POST(this, method, data);
+        if (typeof resp == 'object' && 'parcel' in resp)
+            return resp.parcel;
+        throw new Error('Unexpected return value (parcel): ' + JSON.stringify(resp));
+    }
+
+    async #login(p) {
+        const data = {};
+        if (p.company) data.company = p.company;
+        if (p.verifyIP) data.verifyIP = true;
+        try {
+            const resp = await this.#basicGET('login', data);
+            if (typeof resp == 'object' && 'jwt' in resp)
+                return resp.jwt;
+            throw new Error('Unexpected return value (login): ' + JSON.stringify(resp));
+        } catch(err) {
+            if (err.message.includes('Not Found')) {
+                this.token = null;
+            } else
+                throw new Error(err);
+        }
+    }
+
+    async upload(p) {
+        if (!p.doctype)
+            throw new Error('you need to specify ‘doctype’');
+        if (!p.period)
+            throw new Error('you need to specify ‘period’');
+        if (!p.meta && p.ready)
+            throw new Error('if the document is ‘ready’ it must contain ‘meta’');
+        if (p.ready && (!p.file && !p.data))
+            throw new Error('if the document is ‘ready’ it must have a content as either ‘file’ or ‘data’');
+        const s = commonUploadParams(p);
+        s.doctype = p.doctype;
+        return await this.#documentPOST('docs/upload', s, p.file || p.data);
+    }
+
+    async update(p) {
+        const s = commonUploadParams(p);
+        return await this.#documentPOST('docs/update', s, p.file || p.data);
+    }
+
+    async updateMeta(p) {
+        const data = {
+            meta: p.meta,
+            value: p.value,
+        };
+        if (p.user) data.user = p.user;
+        if (p.company) data.company = p.company;
+        const resp = await this.#POST('docs/' + (0|p.id) + '/meta/update', data);
+        return massageDoc(resp);
+    }
+
+    async search(p) {
+        const data = {
+            doctype: p.doctype,
+            meta: JSON.stringify(p.meta),
+        };
+        if (p.user) data.user = p.user;
+        if (p.company) data.company = p.company;
+        if (p.period) data.period = forceNumber(p.period);
+        if (p.limit) data.limit = forceNumber(p.limit);
+        if (p.complete) data.complete = 1;
+        const resp = await this.#POST('docs/search', data);
+        if (typeof resp == 'object' && 'documents' in resp)
+            return resp.documents;
         throw new Error('malformed response');
-    });
-}
+    }
 
-function document(me, p) {
-    const data = {};
-    if (p.user) data.user = p.user;
-    if (p.company) data.company = p.company;
-    return GETbuffer(me, 'docs/' + (0|p.id), data);
-}
+    async document(p) {
+        const data = {};
+        if (p.user) data.user = p.user;
+        if (p.company) data.company = p.company;
+        return await this.#GETbuffer('docs/' + (0|p.id), data);
+    }
 
-function documentMeta(me, p) {
-    const data = {};
-    if (p.user) data.user = p.user;
-    if (p.company) data.company = p.company;
-    return GET(me, 'docs/' + (0|p.id) + '/meta', data).then(massageDoc);
-}
+    async documentMeta(p) {
+        const data = {};
+        if (p.user) data.user = p.user;
+        if (p.company) data.company = p.company;
+        const resp = await this.#GET('docs/' + (0|p.id) + '/meta', data);
+        return massageDoc(resp);
+    }
 
-function documentLink(me, p) {
-    const data = {};
-    if (p.user) data.user = p.user;
-    if (p.company) data.company = p.company;
-    return GET(me, 'docs/' + (0|p.id) + '/link', data);
-}
+    async documentLink(p) {
+        const data = {};
+        if (p.user) data.user = p.user;
+        if (p.company) data.company = p.company;
+        return await this.#GET('docs/' + (0|p.id) + '/link', data);
+    }
 
-function documentDelete(me, p) {
-    const data = {};
-    if (p.user) data.user = p.user;
-    if (p.company) data.company = p.company;
-    return GET(me, 'docs/' + (0|p.id) + '/delete', data);
-}
+    async documentDelete(p) {
+        const data = {};
+        if (p.user) data.user = p.user;
+        if (p.company) data.company = p.company;
+        return await this.#GET('docs/' + (0|p.id) + '/delete', data);
+    }
 
-function searchOne(me, p) {
-    p.limit = 2; // we need 1 but limit to 2 to know if search was not unique
-    p.complete = 1; // download each metadata directly to avoid one round-trip
-    return search(me, p).then(function (data) {
+    async searchOne(p) {
+        p.limit = 2; // we need 1 but limit to 2 to know if search was not unique
+        p.complete = 1; // download each metadata directly to avoid one round-trip
+        const data = await this.search(p);
         if (data.length != 1)
             throw new Error('Search result was not a single document');
         return data[0];
-    });
-}
+    }
 
-function parcelCreate(me, p) {
-    const data = {
-        company: p.company,
-        doctype: p.doctype,
-        filename: p.filename,
-    };
-    if (p.user) data.user = p.user;
-    return parcelPOST(me, 'docs/parcel/create', data);
-}
+    async parcelCreate(p) {
+        const data = {
+            company: p.company,
+            doctype: p.doctype,
+            filename: p.filename,
+        };
+        if (p.user) data.user = p.user;
+        return await this.#parcelPOST('docs/parcel/create', data);
+    }
 
-function parcelClose(me, p) {
-    const data = {
-        parcel: p.id,
-    };
-    if (p.user) data.user = p.user;
-    if (p.company) data.company = p.company;
-    if (p.extra) data.extra = p.extra;
-    return parcelPOST(me, 'docs/parcel/close', data);
-}
+    async parcelClose(p) {
+        const data = {
+            parcel: p.id,
+        };
+        if (p.user) data.user = p.user;
+        if (p.company) data.company = p.company;
+        if (p.extra) data.extra = p.extra;
+        return await this.#parcelPOST('docs/parcel/close', data);
+    }
 
-function parcelDelete(me, p) {
-    const data = {
-        parcel: p.id,
-    };
-    if (p.user) data.user = p.user;
-    if (p.company) data.company = p.company;
-    if (p.error) data.error = p.error;
-    if (p.extra) data.extra = p.extra;
-    return parcelPOST(me, 'docs/parcel/delete', data);
-}
+    async parcelDelete(p) {
+        const data = {
+            parcel: p.id,
+        };
+        if (p.user) data.user = p.user;
+        if (p.company) data.company = p.company;
+        if (p.error) data.error = p.error;
+        if (p.extra) data.extra = p.extra;
+        return await this.#parcelPOST('docs/parcel/delete', data);
+    }
 
-function parcelXML(me, p) {
-    const data = {};
-    if (p.user) data.user = p.user;
-    if (p.company) data.company = p.company;
-    return GETbuffer(me, 'docs/parcel/' + p.id + '.xml', data).then(xml => {
+    async parcelXML(p) {
+        const data = {};
+        if (p.user) data.user = p.user;
+        if (p.company) data.company = p.company;
+        let xml = await this.#GETbuffer('docs/parcel/' + p.id + '.xml', data);
         if (xml[0] != 0x30)
             return xml; // old format, pure XML
         // new format, signed and gzipped
         xml = CMS.extract(xml);
         return gunzip(xml);
-    });
+    }
+
+    async companyList(p) {
+        const data = {};
+        if (p.user) data.user = p.user;
+        if (p.company) data.company = p.company;
+        return await this.#GET('company/list', data);
+    }
+
+    async doctypeList(p) {
+        const data = {};
+        if (p.user) data.user = p.user;
+        if (p.company) data.company = p.company;
+        return await this.#GET('doctype/list', data);
+    }
+
+    async doctypeInfo(p) {
+        const data = {};
+        if (p.user) data.user = p.user;
+        if (p.company) data.company = p.company;
+        if (p.doctype) data.doctype = p.doctype;
+        const resp = await this.#GET('doctype', data);
+        return massageDoctype(resp);
+    }
+
 }
 
-function companyList(me, p) {
-    const data = {};
-    if (p.user) data.user = p.user;
-    if (p.company) data.company = p.company;
-    return GET(me, 'company/list', data);
+class TDocError extends Error {
+    constructor(method, err) {
+        super(err.message);
+        this.name = 'TDoc.Error';
+        this.method = method;
+        this.status = 0|err.status;
+        try {
+            //TODO: does this actually happen?
+            if ('code' in err.response.body)
+                err = err.response.body;
+        } catch (e) {
+            // ignore
+        }
+        this.code = 0|err.code;
+        this.additional = err.additional || [];
+    }
 }
-
-function doctypeList(me, p) {
-    const data = {};
-    if (p.user) data.user = p.user;
-    if (p.company) data.company = p.company;
-    return GET(me, 'doctype/list', data);
-}
-
-function doctypeInfo(me, p) {
-    const data = {};
-    if (p.user) data.user = p.user;
-    if (p.company) data.company = p.company;
-    if (p.doctype) data.doctype = p.doctype;
-    return GET(me, 'doctype', data).then(massageDoctype);
-}
-
-// register nodeified versions in the prototype
-[
-    companyList,
-    doctypeInfo,
-    doctypeList,
-    document,
-    documentDelete,
-    documentLink,
-    documentMeta,
-    parcelClose,
-    parcelCreate,
-    parcelDelete,
-    parcelXML,
-    search,
-    searchOne,
-    update,
-    updateMeta,
-    upload,
-].forEach(function (f) {
-    TDoc.prototype[f.name] = function (p) {
-        if (typeof p != 'object')
-            throw new Error('The parameter must be an object.');
-        return f(this, p).nodeify(p.callback);
-    };
-});
 
 module.exports = TDoc;

@@ -13,6 +13,9 @@ const
         mode: testMode,
     });
 
+if (testMode == 'record')
+    require('fs').rmSync(__dirname + '/nock/', { recursive: true, force: true });
+
 function sha256(val) {
     return crypto.createHash('sha256').update(val).digest('hex');
 }
@@ -128,8 +131,8 @@ test('upload', { after: fixMultipart }, function (t) {
         e = null;
         return tdoc.upload({
             file: 'does_not_exist.pdf',
-            doctype: 'Prova44A',
-            period: 2014,
+            doctype: 'File',
+            period: 2023,
             meta: {}
         });
     }).catch(function (e1) {
