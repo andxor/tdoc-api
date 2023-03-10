@@ -1,34 +1,39 @@
 [
     {
-        "scope": "http://127.0.0.1:80",
+        "scope": "http://127.0.0.1:8008",
         "method": "POST",
         "path": "/tdoc/api/docs/search",
-        "body": "doctype=File&meta=%7B%22%24dateIns%22%3A%7B%22%24gte%22%3A123456%2C%22%24lte%22%3A%222016-06-28%22%7D%7D&limit=7",
+        "body": "doctype=File&meta=%7B%22%24dateIns%22%3A%7B%22%24gte%22%3A%222022-09-13%22%2C%22%24lt%22%3A%222022-09-14%22%7D%7D&limit=7",
         "status": 200,
         "response": {
             "documents": [
-                19533,
-                17279,
-                17277,
-                17275,
-                10564,
-                10562,
-                10560
+                297829,
+                297828,
+                297827,
+                297826,
+                297825,
+                297824,
+                297823
             ]
         },
         "rawHeaders": [
+            "Set-Cookie",
+            "JSESSIONID=8D7A5E95247CCB1CBECB5EB3B5C2BA8D; Path=/tdoc; HttpOnly",
             "Access-Control-Allow-Origin",
             "*",
             "Vary",
             "Accept-Encoding",
             "Content-Type",
             "application/json;charset=UTF-8",
-            "Transfer-Encoding",
-            "chunked",
+            "Content-Length",
+            "64",
             "Date",
-            "Mon, 30 Apr 2018 11:12:15 GMT",
+            "Fri, 10 Mar 2023 13:55:21 GMT",
+            "Keep-Alive",
+            "timeout=20",
             "Connection",
-            "close"
-        ]
+            "keep-alive"
+        ],
+        "responseIsBinary": false
     }
 ]

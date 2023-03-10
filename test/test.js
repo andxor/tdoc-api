@@ -5,7 +5,8 @@ const
     tapeNock = require('tape-nock'),
     crypto = require('crypto'),
     TDoc = require('../index'),
-    tdoc = new TDoc('http://127.0.0.1/tdoc/api/', 'l.luchini@andxor.it', 'Password1'),
+    cfg = require('../config'),
+    tdoc = new TDoc(cfg.url, cfg.user, cfg.pass),
     testMode = (process.argv.length > 2 && process.argv[2] == 'local') ? 'lockdown' : 'record',
     test = tapeNock(tape, {
         fixtures: __dirname + '/nock/',
@@ -31,11 +32,11 @@ test('search', function (t) {
     tdoc.search({
         doctype: 'File',
         limit: 7,
-        meta: {$dateIns:{$gte:123456,$lte:"2016-06-28"}}
+        meta: {$dateIns:{$gte:"2022-09-13",$lt:"2022-09-14"}}
     }).then(function (docs) {
         t.equal(docs.length, 7, 'number of documents found');
         t.deepEqual(docs,
-            [19533, 17279, 17277, 17275, 10564, 10562, 10560],
+            [297829, 297828, 297827, 297826, 297825, 297824, 297823],
             'documents ids');
     }).catch(function (err) {
         t.fail(err);
@@ -47,9 +48,9 @@ test('search', function (t) {
 test('searchOne', function (t) {
     tdoc.searchOne({
         doctype: 'File',
-        meta: {$dateIns:{$gte:"2015-09-23",$lte:"2015-09-24"}}
+        meta: {"Numero documento": "Xox1w6eZAx"}
     }).then(function (doc) {
-        t.equal(doc.docid, 10560, 'single document');
+        t.equal(doc.docid, 297884, 'single document');
     }).catch(function (err) {
         t.fail(err);
     }).finally(function () {
@@ -59,13 +60,13 @@ test('searchOne', function (t) {
 
 test('download', function (t) {
     tdoc.documentMeta({
-        id: 17275,
+        id: 297884,
     }).then(function (doc) {
         return tdoc.document({
-            id: 17275,
+            id: 297884,
         }).then(function (bin) {
             t.ok(bin instanceof Buffer, 'data type');
-            t.equal(bin.length, 887, 'data length');
+            t.equal(bin.length, 994, 'data length');
             t.equal(sha256(bin), doc.hash.toLowerCase(), 'data hash');
             return tdoc.parcelXML({
                 id: doc.parcel,
@@ -97,8 +98,8 @@ test('upload', { after: fixMultipart }, function (t) {
     let e = null;
     tdoc.upload({
         data: Buffer.from('test content'),
-        doctype: 'Prova44A',
-        period: 2014,
+        doctype: 'File',
+        period: 2023,
         meta: {},
     }).catch(function (e1) {
         e = e1;
@@ -107,14 +108,15 @@ test('upload', { after: fixMultipart }, function (t) {
         t.equal(e.code, 68, 'upload 1 should give code 68 (missing metadata) error');
     }).then(function () {
         e = null;
+        const random = crypto.randomBytes(8).toString('hex');
         return tdoc.upload({
             data: Buffer.from('test content'),
-            doctype: 'Prova44A',
-            period: 2014,
+            doctype: 'File',
+            period: 2023,
             meta: {
-                int1a: 1,
-                str1a: 'a',
-                data1a: '2017-12-31',
+                'Data documento': '2023-03-10',
+                'Numero documento': random,
+                'Nome file': random + '.txt',
             },
         });
     }).catch(function (e1) {
