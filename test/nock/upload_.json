@@ -3,7 +3,7 @@
         "scope": "http://127.0.0.1:8008",
         "method": "POST",
         "path": "/tdoc/api/docs/upload",
-        "body": "----------------------------366104694212713998890489\r\nContent-Disposition: form-data; name=\"period\"\r\n\r\n2023\r\n----------------------------366104694212713998890489\r\nContent-Disposition: form-data; name=\"meta\"\r\n\r\n{}\r\n----------------------------366104694212713998890489\r\nContent-Disposition: form-data; name=\"doctype\"\r\n\r\nFile\r\n----------------------------366104694212713998890489\r\nContent-Disposition: form-data; name=\"document\"\r\nContent-Type: application/octet-stream\r\n\r\ntest content\r\n----------------------------366104694212713998890489--\r\n",
+        "body": "----------------------------893311767055410252526273\r\nContent-Disposition: form-data; name=\"period\"\r\n\r\n2023\r\n----------------------------893311767055410252526273\r\nContent-Disposition: form-data; name=\"meta\"\r\n\r\n{}\r\n----------------------------893311767055410252526273\r\nContent-Disposition: form-data; name=\"doctype\"\r\n\r\nFile\r\n----------------------------893311767055410252526273\r\nContent-Disposition: form-data; name=\"document\"\r\nContent-Type: application/octet-stream\r\n\r\ntest content\r\n----------------------------893311767055410252526273--\r\n",
         "status": 500,
         "response": {
             "code": 68,
@@ -12,7 +12,7 @@
         },
         "rawHeaders": [
             "Set-Cookie",
-            "JSESSIONID=DB915C801AC4713255B094D75E9409CF; Path=/tdoc; HttpOnly",
+            "JSESSIONID=048FBA71EC54DF3F8EFE08BA844D5519; Path=/tdoc; HttpOnly",
             "Access-Control-Allow-Origin",
             "*",
             "Vary",
@@ -22,7 +22,7 @@
             "Content-Length",
             "304",
             "Date",
-            "Fri, 10 Mar 2023 16:09:27 GMT",
+            "Fri, 10 Mar 2023 16:44:15 GMT",
             "Connection",
             "close"
         ],
@@ -32,14 +32,14 @@
         "scope": "http://127.0.0.1:8008",
         "method": "POST",
         "path": "/tdoc/api/docs/upload",
-        "body": "----------------------------078882553489134922579007\r\nContent-Disposition: form-data; name=\"period\"\r\n\r\n2023\r\n----------------------------078882553489134922579007\r\nContent-Disposition: form-data; name=\"meta\"\r\n\r\n{\"Data documento\":\"2023-03-10\",\"Numero documento\":\"5fc24dc8533d58f3\",\"Nome file\":\"5fc24dc8533d58f3.txt\"}\r\n----------------------------078882553489134922579007\r\nContent-Disposition: form-data; name=\"doctype\"\r\n\r\nFile\r\n----------------------------078882553489134922579007\r\nContent-Disposition: form-data; name=\"document\"\r\nContent-Type: application/octet-stream\r\n\r\ntest content\r\n----------------------------078882553489134922579007--\r\n",
+        "body": "----------------------------839713305781570078448956\r\nContent-Disposition: form-data; name=\"period\"\r\n\r\n2023\r\n----------------------------839713305781570078448956\r\nContent-Disposition: form-data; name=\"meta\"\r\n\r\n{\"Data documento\":\"2023-03-10\",\"Numero documento\":\"nomefisso\",\"Nome file\":\"nomefisso.txt\"}\r\n----------------------------839713305781570078448956\r\nContent-Disposition: form-data; name=\"doctype\"\r\n\r\nFile\r\n----------------------------839713305781570078448956\r\nContent-Disposition: form-data; name=\"document\"\r\nContent-Type: application/octet-stream\r\n\r\ntest content\r\n----------------------------839713305781570078448956--\r\n",
         "status": 200,
         "response": {
             "document": {
-                "docid": 297896,
-                "date": "2023-03-10 16:09:27 UTC",
+                "docid": 297904,
+                "date": "2023-03-10 16:43:50 UTC",
                 "hash": "6AE8A75555209FD6C44157C0AED8016E763FF435A19CF186F76863140143FF72",
-                "filename": "00048BA8.pdf",
+                "filename": "00048BB0.pdf",
                 "company": "Test",
                 "doctype": "File",
                 "numpages": 0,
@@ -49,14 +49,14 @@
                 "mimetype": "application/pdf",
                 "metadata": {
                     "Data documento": "2023-03-10",
-                    "Numero documento": "5fc24dc8533d58f3",
-                    "Nome file": "5fc24dc8533d58f3.txt"
+                    "Numero documento": "nomefisso",
+                    "Nome file": "nomefisso.txt"
                 }
             }
         },
         "rawHeaders": [
             "Set-Cookie",
-            "JSESSIONID=15AEAF5A3E688466E34047847B73C0BD; Path=/tdoc; HttpOnly",
+            "JSESSIONID=1C060EA06AA134947B2E96865B44AA84; Path=/tdoc; HttpOnly",
             "Access-Control-Allow-Origin",
             "*",
             "Vary",
@@ -64,9 +64,9 @@
             "Content-Type",
             "application/json;charset=UTF-8",
             "Content-Length",
-            "398",
+            "384",
             "Date",
-            "Fri, 10 Mar 2023 16:09:27 GMT",
+            "Fri, 10 Mar 2023 16:44:15 GMT",
             "Keep-Alive",
             "timeout=20",
             "Connection",

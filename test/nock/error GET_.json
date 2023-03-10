@@ -14,7 +14,7 @@
         },
         "rawHeaders": [
             "Set-Cookie",
-            "JSESSIONID=ACE5F37B9D9EA33FDD4B4ACA606489DC; Path=/tdoc; HttpOnly",
+            "JSESSIONID=360DDFBA8F16A5D01F5F74F4C3767C89; Path=/tdoc; HttpOnly",
             "Access-Control-Allow-Origin",
             "*",
             "Vary",
@@ -24,7 +24,7 @@
             "Content-Length",
             "109",
             "Date",
-            "Fri, 10 Mar 2023 16:09:27 GMT",
+            "Fri, 10 Mar 2023 16:44:15 GMT",
             "Connection",
             "close"
         ],

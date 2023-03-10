@@ -87,7 +87,6 @@ test('upload', { after: fixMultipart }, async t => {
     t.ok(e instanceof Error, 'upload 1 should throw an Error');
     t.equal(e.code, 68, 'upload 1 should give code 68 (missing metadata) error');
     e = null;
-    const random = crypto.randomBytes(8).toString('hex');
     try {
         await tdoc.upload({
             data: Buffer.from('test content'),
@@ -95,8 +94,8 @@ test('upload', { after: fixMultipart }, async t => {
             period: 2023,
             meta: {
                 'Data documento': '2023-03-10',
-                'Numero documento': random,
-                'Nome file': random + '.txt',
+                'Numero documento': 'nomefisso',
+                'Nome file': 'nomefisso.txt',
             },
         });
     } catch (error) {
