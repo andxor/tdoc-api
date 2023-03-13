@@ -8,7 +8,7 @@ API
 
 All the methods have a single object parameter, used as a way to improve readability and have optional parameters.
 
-All methods return a [Promise/A+](https://promisesaplus.com/) but accept an optional Node-style `callback(err, data)` parameter.
+All methods return a native Promiseand since 1.0.0 no longer accept an optional Node-style `callback(err, data)` parameter.
 
 All methods accept a `user` parameter used to specify the user the request is made on the behalf of (to be used if and only if the authentication user is root).
 
