@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@lapo/extractcms": "^1.0.4",
-    "superagent": "^4.1.0"
+    "superagent": "^8.0.9"
   },
   "devDependencies": {
     "eslint": "^8.35.0",
