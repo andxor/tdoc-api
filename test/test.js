@@ -103,6 +103,7 @@ test('upload', { after: fixMultipart }, async t => {
     }
     t.ok(e == null, 'upload 2 should be OK');
     if (e) console.log(e.message);
+    //TODO: understand why it has 20" timeout on close when following test is done
     e = null;
     try {
         await tdoc.upload({
