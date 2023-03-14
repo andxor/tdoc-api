@@ -116,9 +116,11 @@ class TDoc {
             .agent(this.#agent);
         if (wantBuffer)
             request.buffer(true).parse(req.parse.image); // necessary to have resp.body as a Buffer
+        this.token = null; // delete previous token
         await this.#addAuth(request);
         try {
-            return await request.query(data);
+            const resp = await request.query(data);
+            return resp.body;
         } catch(err) {
             throw new TDocError(method, err);
         }
@@ -142,9 +144,9 @@ class TDoc {
                 const errCode = err.response.body.code;
                 const errMessage = err.response.body.message;
                 if (errCode == 338 /* Basic Authentication disabled  */) {
-                    return this.#loginAndGET(this, method, data, false);
+                    return this.#loginAndGET(method, data, false);
                 } else if ( errCode == 337 /* Token expired */ ) {
-                    return this.#loginAndGET(this, method, data, false);
+                    return this.#loginAndGET(method, data, false);
                 }
             }
             throw new TDocError(method, err);
@@ -193,9 +195,9 @@ class TDoc {
                 const errBody = JSON.parse(err.response.body.toString('utf-8'));
                 const errCode = errBody.code;
                 if (errCode == 338 /* Basic Authentication disabled  */) {
-                    return this.#loginAndGET(this, method, data, true);
+                    return this.#loginAndGET(method, data, true);
                 } else if ( errCode == 337 /* Token expired */ ) {
-                    return this.#loginAndGET(this, method, data, true);
+                    return this.#loginAndGET(method, data, true);
                 }
             }
             throw new TDocError(method, err);
@@ -207,9 +209,14 @@ class TDoc {
             .post(this.#address + method)
             .agent(this.#agent)
             .type('form');
+        this.token = null; // delete previous token
         await this.#addAuth(request);
         try {
-            return await request.send(data);
+            const resp = await request.send(data);
+            data = resp.body;
+            if (typeof data == 'object' && 'message' in data)
+                throw new TDocError(method, data.code, data.message);
+            return data;
         } catch(err) {
             throw new TDocError(method, err);
         }
@@ -231,10 +238,10 @@ class TDoc {
             if ( err.response && err.response.body ) {
                 const errCode = err.response.body.code;
                 const errMessage = err.response.body.message;
-                if (errCode == 338 /* Basic Authentication disabled  */) {
-                    return this.#loginAndPOST(this, method, data);
+                if (errCode == 338 /* Basic Authentication disabled */) {
+                    return this.#loginAndPOST(method, data);
                 } else if ( errCode == 337 /* Token expired */ ) {
-                    return this.#loginAndPOST(this, method, data);
+                    return this.#loginAndPOST(method, data);
                 }
             }
             throw new TDocError(method, err);
